@@ -37,9 +37,10 @@ void ABird::BeginPlay()
 
 void ABird::MoveForward(float Value)
 {
-	if (Controller && (Value != 0.f))
+	if (Controller && Value != 0.f)
 	{
 		FVector Forward = GetActorForwardVector();
+		
 		AddMovementInput(Forward, Value);
 	}
 }
@@ -64,8 +65,8 @@ void ABird::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	PlayerInputComponent->BindAxis(FName("MoveForward"), this, &ABird::MoveForward);
-	PlayerInputComponent->BindAxis(FName("Turn"), this, &ABird::Turn);
-	PlayerInputComponent->BindAxis(FName("LookUp"), this, &ABird::LookUp);
+	PlayerInputComponent->BindAxis("MoveForward", this, &ABird::MoveForward);
+	PlayerInputComponent->BindAxis("Turn", this, &ABird::Turn);
+	PlayerInputComponent->BindAxis("LookUp", this, &ABird::LookUp);
 }
 

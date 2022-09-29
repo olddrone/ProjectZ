@@ -10,19 +10,12 @@ ABaseCharacter::ABaseCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	bUseControllerRotationPitch = false;
-	bUseControllerRotationYaw = false;
-	bUseControllerRotationRoll = false;
+	SetCameraComponent();
 
+	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
 
-	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
-	CameraBoom->SetupAttachment(GetRootComponent());
-	CameraBoom->TargetArmLength = 300.f;
-
-	ViewCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("ViewCamera"));
-	ViewCamera->SetupAttachment(CameraBoom);
 
 }
 
@@ -34,28 +27,12 @@ void ABaseCharacter::BeginPlay()
 
 void ABaseCharacter::MoveForward(float Value)
 {
-	if (Controller && (Value != 0.f))
-	{
-		// find out which way is forward
-		const FRotator ControlRotation = GetControlRotation();
-		const FRotator YawRotation(0.f, ControlRotation.Yaw, 0.f);
-
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(Direction, Value);
-	}
+	Move(Value, EAxis::X);
 }
 
 void ABaseCharacter::MoveRight(float Value)
 {
-	if (Controller && (Value != 0.f))
-	{
-		// find out which way is right
-		const FRotator ControlRotation = GetControlRotation();
-		const FRotator YawRotation(0.f, ControlRotation.Yaw, 0.f);
-
-		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
-		AddMovementInput(Direction, Value);
-	}
+	Move(Value, EAxis::Y);
 }
 
 void ABaseCharacter::Turn(float Value)
@@ -68,6 +45,28 @@ void ABaseCharacter::LookUp(float Value)
 	AddControllerPitchInput(Value);
 }
 
+void ABaseCharacter::SetCameraComponent()
+{
+	CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraArm"));
+	CameraArm->SetupAttachment(GetRootComponent());
+	CameraArm->TargetArmLength = 300.f;
+	CameraArm->bUsePawnControlRotation = true;
+
+	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
+	CameraComponent->SetupAttachment(CameraArm, USpringArmComponent::SocketName);
+	CameraComponent->bUsePawnControlRotation = false;
+}
+
+void ABaseCharacter::Move(float Value, EAxis::Type axis)
+{
+	if (Controller && Value != 0.f)
+	{
+		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
+		const FVector Direction(FRotationMatrix(YawRotation).GetUnitAxis(axis));
+		AddMovementInput(Direction, Value);
+	}
+}
+
 void ABaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -78,9 +77,9 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	PlayerInputComponent->BindAxis(FName("MoveForward"), this, &ABaseCharacter::MoveForward);
-	PlayerInputComponent->BindAxis(FName("MoveRight"), this, &ABaseCharacter::MoveRight);
-	PlayerInputComponent->BindAxis(FName("Turn"), this, &ABaseCharacter::Turn);
-	PlayerInputComponent->BindAxis(FName("LookUp"), this, &ABaseCharacter::LookUp);
+	PlayerInputComponent->BindAxis("MoveForward", this, &ABaseCharacter::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &ABaseCharacter::MoveRight);
+	PlayerInputComponent->BindAxis("Turn", this, &ABaseCharacter::Turn);
+	PlayerInputComponent->BindAxis("LookUp", this, &ABaseCharacter::LookUp);
 }
 
