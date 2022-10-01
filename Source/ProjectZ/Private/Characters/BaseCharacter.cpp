@@ -81,5 +81,7 @@ void ABaseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 	PlayerInputComponent->BindAxis("MoveRight", this, &ABaseCharacter::MoveRight);
 	PlayerInputComponent->BindAxis("Turn", this, &ABaseCharacter::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &ABaseCharacter::LookUp);
+
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 }
 
