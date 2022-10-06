@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "CharacterTypes.h"
 #include "CharacterAnimInstance.generated.h"
 
 class ABaseCharacter;
 class UCharacterMovementComponent;
+
 /**
  * 
  */
@@ -22,7 +24,7 @@ public:
 
 private:
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	ABaseCharacter* BaseCharacter;
+	ABaseCharacter* Character;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	UCharacterMovementComponent* CharacterMovmement;
@@ -32,4 +34,7 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool IsFalling;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Movement | Character State", meta = (AllowPrivateAccess = "true"))
+	ECharacterState CharacterState;
 };

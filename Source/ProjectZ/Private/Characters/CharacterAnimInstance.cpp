@@ -9,10 +9,10 @@ void UCharacterAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
 
-	BaseCharacter= Cast<ABaseCharacter>(TryGetPawnOwner());
-	if (BaseCharacter)
+	Character = Cast<ABaseCharacter>(TryGetPawnOwner());
+	if (Character)
 	{
-		CharacterMovmement = BaseCharacter->GetCharacterMovement();
+		CharacterMovmement = Character->GetCharacterMovement();
 	}
 }
 
@@ -24,5 +24,6 @@ void UCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	{
 		GroundSpeed = UKismetMathLibrary::VSizeXY(CharacterMovmement->Velocity);
 		IsFalling = CharacterMovmement->IsFalling();
+		CharacterState = Character->GetCharacterState();
 	}
 }
