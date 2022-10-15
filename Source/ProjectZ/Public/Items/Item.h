@@ -25,6 +25,8 @@ public:
 
 	FORCEINLINE UStaticMeshComponent* GetItemMesh() const { return ItemMesh; }
 	FORCEINLINE void SetItemState(EItemState State) { ItemState = State; }
+	FORCEINLINE USphereComponent* GetSphere() const { return Sphere; }
+
 protected:
 	UFUNCTION()
 	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,

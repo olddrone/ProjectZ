@@ -55,6 +55,24 @@ void ABaseCharacter::EKeyPressed()
 	{
 		OverlappingWeapon->Equip(GetMesh(), FName("RightHandSocket"));
 		CharacterState = ECharacterState::ECS_EquippedOnHandedWeapon;
+		OverlappingItem = nullptr;
+		EquippedWeapon = OverlappingWeapon;
+	}
+	else
+	{
+		if (CanDisarm())
+		{
+			PlayEquipMontage(FName("Unequip"));
+			CharacterState = ECharacterState::ECS_Unequipped;
+			ActionState = EActionState::EAS_EquippingWeapon;
+		}
+		else if (CanArm())
+		{
+	
+			PlayEquipMontage(FName("Equip"));
+			CharacterState = ECharacterState::ECS_EquippedOnHandedWeapon;
+			ActionState = EActionState::EAS_EquippingWeapon;
+		}
 	}
 }
 
@@ -101,6 +119,51 @@ bool ABaseCharacter::CanAttack()
 		CharacterState != ECharacterState::ECS_Unequipped;
 }
 
+bool ABaseCharacter::CanDisarm()
+{
+	return ActionState == EActionState::EAS_Unocuupied &&
+		CharacterState != ECharacterState::ECS_Unequipped;
+}
+
+bool ABaseCharacter::CanArm()
+{
+	return ActionState == EActionState::EAS_Unocuupied &&
+		CharacterState == ECharacterState::ECS_Unequipped &&
+		EquippedWeapon;
+}
+
+void ABaseCharacter::PlayEquipMontage(FName SectionName)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && EquipMontage)
+	{
+		AnimInstance->Montage_Play(EquipMontage);
+		AnimInstance->Montage_JumpToSection(SectionName, EquipMontage);
+		
+	}
+}
+
+void ABaseCharacter::Disarm()
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->AttachMeshToSocket(GetMesh(), FName("SpineSocket"));
+	}
+}
+
+void ABaseCharacter::Arm()
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->AttachMeshToSocket(GetMesh(), FName("RightHandSocket"));
+	}
+}
+
+void ABaseCharacter::FinishEquipping()
+{
+	ActionState = EActionState::EAS_Unocuupied;
+}
+
 void ABaseCharacter::SetCameraComponent()
 {
 	CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraArm"));
@@ -115,7 +178,7 @@ void ABaseCharacter::SetCameraComponent()
 
 void ABaseCharacter::Move(float Value, EAxis::Type axis)
 {
-	if (ActionState == EActionState::EAS_Attacking)
+	if (ActionState != EActionState::EAS_Unocuupied)
 		return;
 	if (Controller && Value != 0.f)
 	{
