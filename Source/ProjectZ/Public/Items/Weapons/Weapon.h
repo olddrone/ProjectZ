@@ -20,6 +20,8 @@ public:
 	void Equip(USceneComponent* InParent, FName InSocketName);
 	void AttachMeshToSocket(USceneComponent* InParent, const FName& InSocketName);
 
+	FORCEINLINE UBoxComponent* GetWeaponBox() const { return WeaponBox; }
+
 protected:
 	virtual void BeginPlay() override;
 
