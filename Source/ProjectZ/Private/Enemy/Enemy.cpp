@@ -41,14 +41,43 @@ void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 void AEnemy::GetHit(const FVector& ImpactPoint)
 {
 	DRAW_SPHERE_COLOR(ImpactPoint, FColor::Orange);
-	PlayHitMontage();
 
+	DirectionalHitReact(ImpactPoint);
+}
+
+void AEnemy::DirectionalHitReact(const FVector& ImpactPoint)
+{
 	const FVector Forward = GetActorForwardVector();
 	const FVector ImpactLowerd(ImpactPoint.X, ImpactPoint.Y, GetActorLocation().Z);
 	const FVector ToHit = (ImpactLowerd - GetActorLocation()).GetSafeNormal();
 	const double CosTheTa = FVector::DotProduct(Forward, ToHit);
 	double Theta = FMath::Acos(CosTheTa);
 	Theta = FMath::RadiansToDegrees(Theta);
+
+	const FVector CrossProduct = FVector::CrossProduct(Forward, ToHit);
+	if (CrossProduct.Z < 0)
+	{
+		Theta *= -1.f;
+	}
+
+	FName Section("FromBack");
+	if (-45.f <= Theta && Theta < 45.f)
+	{
+		Section = FName("FromFront");
+	}
+	else if (-135.f <= Theta && Theta < -45.f)
+	{
+		Section = FName("FromLeft");
+	}
+	else if (45.f <= Theta && Theta < 135.f)
+	{
+		Section = FName("FromRight");
+	}
+
+	PlayHitMontage(Section);
+
+	UKismetSystemLibrary::DrawDebugArrow(this, GetActorLocation(),
+		GetActorLocation() + CrossProduct * 100.f, 5.f, FColor::Blue, 5.f);
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(1, 5.f, FColor::Green,
@@ -61,14 +90,13 @@ void AEnemy::GetHit(const FVector& ImpactPoint)
 		GetActorLocation() + ToHit * 60.f, 5.f, FColor::Green, 5.f);
 }
 
-void AEnemy::PlayHitMontage()
+void AEnemy::PlayHitMontage(const FName& SectionName)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && HitMontage)
 	{
-		Test("Hit");
 		AnimInstance->Montage_Play(HitMontage);
-		//AnimInstance->Montage_JumpToSection("Hit", HitMontage);
+		AnimInstance->Montage_JumpToSection(SectionName, HitMontage);
 
 	}
 }

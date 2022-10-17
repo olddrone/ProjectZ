@@ -21,7 +21,8 @@ public:
 	void AttachMeshToSocket(USceneComponent* InParent, const FName& InSocketName);
 
 	FORCEINLINE UBoxComponent* GetWeaponBox() const { return WeaponBox; }
-
+	FORCEINLINE TArray<AActor*> GetIgnoreActors() const { return IgnoreActors; }
+	TArray<AActor*> IgnoreActors;
 protected:
 	virtual void BeginPlay() override;
 
@@ -48,4 +49,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	USceneComponent* TraceEnd;
+
+
 };

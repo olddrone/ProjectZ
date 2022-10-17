@@ -28,6 +28,8 @@ void ABaseCharacter::SetWeaponCollisionEnabled(ECollisionEnabled::Type Collision
 	if (EquippedWeapon && EquippedWeapon->GetWeaponBox())
 	{
 		EquippedWeapon->GetWeaponBox()->SetCollisionEnabled(CollisionEnabled);
+	//	EquippedWeapon->GetIgnoreActors().Empty();
+		EquippedWeapon->IgnoreActors.Empty();
 	}
 }
 
@@ -141,7 +143,7 @@ bool ABaseCharacter::CanArm()
 		EquippedWeapon;
 }
 
-void ABaseCharacter::PlayEquipMontage(FName SectionName)
+void ABaseCharacter::PlayEquipMontage(const FName& SectionName)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && EquipMontage)
