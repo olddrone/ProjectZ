@@ -21,7 +21,8 @@ public:
 	void AttachMeshToSocket(USceneComponent* InParent, const FName& InSocketName);
 
 	FORCEINLINE UBoxComponent* GetWeaponBox() const { return WeaponBox; }
-	FORCEINLINE TArray<AActor*> GetIgnoreActors() const { return IgnoreActors; }
+	
+	
 	TArray<AActor*> IgnoreActors;
 protected:
 	virtual void BeginPlay() override;
@@ -36,6 +37,8 @@ protected:
 	void OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void CreateFields(const FVector& FieldLocation);
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
