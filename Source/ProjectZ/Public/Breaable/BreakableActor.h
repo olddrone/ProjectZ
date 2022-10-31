@@ -8,6 +8,8 @@
 #include "BreakableActor.generated.h"
 
 class UGeometryCollectionComponent;
+class AChip;
+class UBoxComponent;
 
 UCLASS()
 class PROJECTZ_API ABreakableActor : public AActor, public IHitInterface
@@ -23,8 +25,16 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+
 private:
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UGeometryCollectionComponent* GetmetryCollection;
 
+	UPROPERTY(EditAnywhere, Category = "Breakable Properties", meta = (AllowPrivateAccess = "true"))
+	TArray<TSubclassOf<AChip>> ChipClasses;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	UBoxComponent* Box;
+
+	bool bBroken = false;
 };

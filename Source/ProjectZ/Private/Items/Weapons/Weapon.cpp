@@ -6,6 +6,7 @@
 #include "Components/SphereComponent.h"
 #include "Components/BoxComponent.h"
 #include "Interfaces/HitInterface.h"
+#include "NiagaraComponent.h"
 
 AWeapon::AWeapon()
 {
@@ -40,6 +41,10 @@ void AWeapon::Equip(USceneComponent* InParent, FName InSocketName)
 	if (GetSphere())
 	{
 		GetSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	} 
+	if (EmbersEffect)
+	{
+		EmbersEffect->Deactivate();
 	}
 }
 

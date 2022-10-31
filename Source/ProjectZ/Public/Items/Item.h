@@ -7,6 +7,7 @@
 #include "Item.generated.h"
 
 class USphereComponent;
+class UNiagaraComponent;
 
 enum class EItemState : uint8
 {
@@ -54,6 +55,8 @@ protected:
 	template<typename T>
 	T Avg(T First, T Second);
 
+	UPROPERTY(EditAnywhere, Category = "Effect")
+	UNiagaraComponent* EmbersEffect;
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
@@ -66,6 +69,7 @@ private:
 	USphereComponent* Sphere;
 
 	EItemState ItemState = EItemState::EIS_Hovering;
+
 };
 
 template<typename T>

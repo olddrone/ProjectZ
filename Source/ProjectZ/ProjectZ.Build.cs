@@ -13,7 +13,8 @@ public class ProjectZ : ModuleRules
 			"CoreUObject", 
 			"Engine", 
 			"InputCore",
-			"GeometryCollectionEngine"
+			"GeometryCollectionEngine",
+			"Niagara"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
