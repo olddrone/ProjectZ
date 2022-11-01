@@ -6,8 +6,10 @@
 #include "ProjectZ/DebugMacros.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/AttributeComponent.h"
+#include "HUD/HealthBarComponent.h"
 
-AEnemy::AEnemy()
+AEnemy::AEnemy() : DeathPose(EDeathPose::EDP_Alive)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -19,12 +21,17 @@ AEnemy::AEnemy()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(
 		ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetGenerateOverlapEvents(true);
+
+	Attributes = CreateDefaultSubobject<UAttributeComponent>(TEXT("Attributes"));
+	HealthBarWidget = CreateDefaultSubobject<UHealthBarComponent>(TEXT("HealthBar"));
+	HealthBarWidget->SetupAttachment(GetRootComponent());
 }
 
 void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	
+
 }
 
 void AEnemy::Tick(float DeltaTime)
@@ -41,7 +48,15 @@ void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AEnemy::GetHit_Implementation(const FVector& ImpactPoint)
 {
-	DirectionalHitReact(ImpactPoint);
+	if (Attributes && Attributes->IsAlive())
+	{
+		DirectionalHitReact(ImpactPoint);
+	}
+	else
+	{
+		Die();
+	}
+	
 
 	if (HitSound)
 	{
@@ -95,4 +110,28 @@ void AEnemy::PlayHitMontage(const FName& SectionName)
 		AnimInstance->Montage_JumpToSection(SectionName, HitMontage);
 
 	}
+}
+
+void AEnemy::Die()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && DeathMontage)
+	{
+		DeathPose = EDeathPose::EDP_Death;
+		AnimInstance->Montage_Play(DeathMontage);
+		AnimInstance->Montage_JumpToSection("Death", HitMontage);
+		
+	}
+}
+
+float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
+	AController* EventInstigator, AActor* DamageCauser)
+{
+	if (Attributes && HealthBarWidget)
+	{
+		Attributes->ReceiveDamage(DamageAmount);
+		HealthBarWidget->SetHealthPercent(Attributes->GetHealthPercent());
+	}
+
+	return DamageAmount;
 }

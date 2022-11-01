@@ -5,9 +5,12 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/HitInterface.h"
+#include "Characters/CharacterTypes.h"
 #include "Enemy.generated.h"
 
 class UAnimMontage;
+class UAttributeComponent;
+class UHealthBarComponent;
 
 UCLASS()
 class PROJECTZ_API AEnemy : public ACharacter, public IHitInterface
@@ -23,18 +26,35 @@ public:
 
 	void DirectionalHitReact(const FVector& ImpactPoint);
 
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
+		class AController* EventInstigator, AActor* DamageCauser) override;
+
+
 protected:
 	virtual void BeginPlay() override;
 
 	void PlayHitMontage(const FName& SectionName);
+	void Die();
 
 private:	
 	UPROPERTY(EditDefaultsOnly, Category = "Montage")
 	UAnimMontage* HitMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Montage")
+	UAnimMontage* DeathMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Sounds")
 	USoundBase* HitSound;
 
 	UPROPERTY(EditAnywhere, Category = "Effects")
 	UParticleSystem* HitParticles;
+
+	UPROPERTY(VisibleAnywhere)
+	UAttributeComponent* Attributes;
+
+	UPROPERTY(VisibleAnywhere)
+	UHealthBarComponent* HealthBarWidget;
+
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	EDeathPose DeathPose;
 };

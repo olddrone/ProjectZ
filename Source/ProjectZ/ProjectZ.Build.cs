@@ -14,6 +14,7 @@ public class ProjectZ : ModuleRules
 			"Engine", 
 			"InputCore",
 			"GeometryCollectionEngine",
+			"UMG",
 			"Niagara"
 		});
 
