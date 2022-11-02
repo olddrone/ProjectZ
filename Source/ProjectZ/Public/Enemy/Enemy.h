@@ -57,4 +57,10 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	EDeathPose DeathPose;
+
+	UPROPERTY()
+	AActor* CombatTarget;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	double CombatRadius = 500.f;
 };
