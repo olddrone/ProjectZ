@@ -11,7 +11,7 @@
 class UAnimMontage;
 class UAttributeComponent;
 class UHealthBarComponent;
-
+class AAIController;
 UCLASS()
 class PROJECTZ_API AEnemy : public ACharacter, public IHitInterface
 {
@@ -28,13 +28,20 @@ public:
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 		class AController* EventInstigator, AActor* DamageCauser) override;
-
+	void CheckCombatTarget();
+	void CheckPatrolTarget();
 
 protected:
 	virtual void BeginPlay() override;
 
 	void PlayHitMontage(const FName& SectionName);
 	void Die();
+	bool InTargetRange(AActor* Target, double Radius);
+	void MoveToTarget(AActor* Target);
+	AActor* ChoosePatrolTarget();
+
+private:
+	void PatrolTimerFinished();
 
 private:	
 	UPROPERTY(EditDefaultsOnly, Category = "Montage")
@@ -62,5 +69,24 @@ private:
 	AActor* CombatTarget;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	double CombatRadius = 500.f;
+	double CombatRadius;
+
+	UPROPERTY()
+	AAIController* EnemyController;
+	
+	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
+	AActor* PatrolTarget;
+
+	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
+	TArray<AActor*> PatrolTargets;
+
+	UPROPERTY(EditAnywhere)
+	double PatrolRadius;
+
+	FTimerHandle PatrolTimer;
+
+	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
+	float WaitMin = 5.f;
+	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
+	float WaitMax = 10.f;
 };

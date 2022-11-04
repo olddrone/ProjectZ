@@ -15,7 +15,8 @@ public class ProjectZ : ModuleRules
 			"InputCore",
 			"GeometryCollectionEngine",
 			"UMG",
-			"Niagara"
+			"Niagara",
+			"AIModule"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
