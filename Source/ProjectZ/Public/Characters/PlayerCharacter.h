@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Character.h"
+#include "BaseCharacter.h"
 #include "CharacterTypes.h"
 #include "PlayerCharacter.generated.h"
 
@@ -11,10 +11,9 @@ class USpringArmComponent;
 class UCameraComponent;
 class AItem;
 class UAnimMontage;
-class AWeapon;
 
 UCLASS()
-class PROJECTZ_API APlayerCharacter : public ACharacter
+class PROJECTZ_API APlayerCharacter : public ABaseCharacter
 {
 	GENERATED_BODY()
 
@@ -25,9 +24,7 @@ public:
 	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 
-	UFUNCTION(BlueprintCallable)
-	void SetWeaponCollisionEnabled(ECollisionEnabled::Type CollisionEnabled);
-
+	
 protected:
 	virtual void BeginPlay() override;
 	void MoveForward(float Value);
@@ -35,11 +32,10 @@ protected:
 	void Turn(float Value);
 	void LookUp(float Value);
 	void EKeyPressed();
-	void Attack();
-	void PlayAttackMontage();
-	UFUNCTION(BlueprintCallable)
-	void AttackEnd();
-	bool CanAttack();
+	virtual void Attack() override;
+	virtual void PlayAttackMontage() override;
+	virtual void AttackEnd() override;
+	virtual bool CanAttack() override;
 	bool CanDisarm();
 	bool CanArm();
 	void PlayEquipMontage(const FName& SectionName);
@@ -62,9 +58,7 @@ private:
 	
 	UPROPERTY(VisibleAnywhere, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
 	AItem* OverlappingItem;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Montage", meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* AttackMontage;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Montage", meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* EquipMontage;
 
@@ -73,6 +67,4 @@ private:
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	EActionState ActionState = EActionState::EAS_Unocuupied;
 
-	UPROPERTY(VisibleAnywhere, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
-	AWeapon* EquippedWeapon;
 };

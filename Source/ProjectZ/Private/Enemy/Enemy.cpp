@@ -11,6 +11,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "AIController.h"
 #include "Perception/PawnSensingComponent.h"
+#include "Items/Weapons/Weapon.h"
 
 AEnemy::AEnemy() : DeathPose(EDeathPose::EDP_Alive), CombatRadius(1000.f), AttackRadius(150.f), 
 PatrolRadius(200.f), WaitMin(2.f), WaitMax(5.f), EnemyState(EEnemyState::EES_Patrolling)
@@ -26,7 +27,6 @@ PatrolRadius(200.f), WaitMin(2.f), WaitMax(5.f), EnemyState(EEnemyState::EES_Pat
 		ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetGenerateOverlapEvents(true);
 
-	Attributes = CreateDefaultSubobject<UAttributeComponent>(TEXT("Attributes"));
 	HealthBarWidget = CreateDefaultSubobject<UHealthBarComponent>(TEXT("HealthBar"));
 	HealthBarWidget->SetupAttachment(GetRootComponent());
 
@@ -56,6 +56,14 @@ void AEnemy::BeginPlay()
 	if (PawnSensing)
 	{
 		PawnSensing->OnSeePawn.AddDynamic(this, &AEnemy::PawnSeen);
+	}
+
+	UWorld* World = GetWorld();
+	if (World && WeaponClass)
+	{
+		AWeapon* DefaultWeapon = World->SpawnActor<AWeapon>(WeaponClass);
+		DefaultWeapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
+		EquippedWeapon = DefaultWeapon;
 	}
 }
 
@@ -142,49 +150,6 @@ void AEnemy::GetHit_Implementation(const FVector& ImpactPoint)
 	}
 }
 
-void AEnemy::DirectionalHitReact(const FVector& ImpactPoint)
-{
-	const FVector Forward = GetActorForwardVector();
-	const FVector ImpactLowerd(ImpactPoint.X, ImpactPoint.Y, GetActorLocation().Z);
-	const FVector ToHit = (ImpactLowerd - GetActorLocation()).GetSafeNormal();
-	const double CosTheTa = FVector::DotProduct(Forward, ToHit);
-	double Theta = FMath::Acos(CosTheTa);
-	Theta = FMath::RadiansToDegrees(Theta);
-
-	const FVector CrossProduct = FVector::CrossProduct(Forward, ToHit);
-	if (CrossProduct.Z < 0)
-	{
-		Theta *= -1.f;
-	}
-
-	FName Section("FromBack");
-	if (-45.f <= Theta && Theta < 45.f)
-	{
-		Section = FName("FromFront");
-	}
-	else if (-135.f <= Theta && Theta < -45.f)
-	{
-		Section = FName("FromLeft");
-	}
-	else if (45.f <= Theta && Theta < 135.f)
-	{
-		Section = FName("FromRight");
-	}
-
-	PlayHitMontage(Section);
-
-}
-
-void AEnemy::PlayHitMontage(const FName& SectionName)
-{
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && HitMontage)
-	{
-		AnimInstance->Montage_Play(HitMontage);
-		AnimInstance->Montage_JumpToSection(SectionName, HitMontage);
-
-	}
-}
 
 void AEnemy::Die()
 {
@@ -242,6 +207,7 @@ void AEnemy::MoveToTarget(AActor* Target)
 void AEnemy::PatrolTimerFinished()
 {
 	MoveToTarget(PatrolTarget);
+
 }
 
 AActor* AEnemy::ChoosePatrolTarget()
@@ -281,5 +247,13 @@ void AEnemy::PawnSeen(APawn* SeenPawn)
 			MoveToTarget(CombatTarget);
 		}
 		
+	}
+}
+
+void AEnemy::Destroyed()
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->Destroy();
 	}
 }
