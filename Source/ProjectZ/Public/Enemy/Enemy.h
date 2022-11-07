@@ -12,6 +12,8 @@ class UAnimMontage;
 class UAttributeComponent;
 class UHealthBarComponent;
 class AAIController;
+class UPawnSensingComponent;
+
 UCLASS()
 class PROJECTZ_API AEnemy : public ACharacter, public IHitInterface
 {
@@ -39,6 +41,9 @@ protected:
 	bool InTargetRange(AActor* Target, double Radius);
 	void MoveToTarget(AActor* Target);
 	AActor* ChoosePatrolTarget();
+
+	UFUNCTION()
+	void PawnSeen(APawn* SeenPawn);
 
 private:
 	void PatrolTimerFinished();
@@ -71,6 +76,9 @@ private:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	double CombatRadius;
 
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	double AttackRadius;
+
 	UPROPERTY()
 	AAIController* EnemyController;
 	
@@ -86,7 +94,12 @@ private:
 	FTimerHandle PatrolTimer;
 
 	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
-	float WaitMin = 5.f;
+	float WaitMin;
 	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
-	float WaitMax = 10.f;
+	float WaitMax;
+
+	UPROPERTY(VisibleAnywhere)
+	UPawnSensingComponent* PawnSensing;
+
+	EEnemyState EnemyState;
 };

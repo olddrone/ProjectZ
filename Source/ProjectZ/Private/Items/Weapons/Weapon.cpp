@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Items/Weapons/Weapon.h"
-#include "Characters/BaseCharacter.h"
+#include "Characters/PlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/SphereComponent.h"
 #include "Components/BoxComponent.h"

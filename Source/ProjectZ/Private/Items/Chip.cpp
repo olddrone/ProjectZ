@@ -2,13 +2,13 @@
 
 
 #include "Items/Chip.h"
-#include "Characters/BaseCharacter.h"
+#include "Characters/PlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 
 void AChip::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, 
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	ABaseCharacter* Character = Cast<ABaseCharacter>(OtherActor);
+	APlayerCharacter* Character = Cast<APlayerCharacter>(OtherActor);
 	if (Character)
 	{
 		

@@ -3,7 +3,7 @@
 #include "Items/Item.h"
 #include "ProjectZ/DebugMacros.h"
 #include "Components/SphereComponent.h"
-#include "Characters/BaseCharacter.h"
+#include "Characters/PlayerCharacter.h"
 #include "NiagaraComponent.h"
 
 AItem::AItem()
@@ -57,7 +57,7 @@ void AItem::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 {
 	const FString OtherActorName = FString("Begin") + OtherActor->GetName();
 
-	ABaseCharacter* Character = Cast<ABaseCharacter>(OtherActor);
+	APlayerCharacter* Character = Cast<APlayerCharacter>(OtherActor);
 	if (Character)
 	{
 		Character->SetOverlappingItem(this);
@@ -68,7 +68,7 @@ void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	const FString OtherActorName = FString("End") + OtherActor->GetName();
-	ABaseCharacter* Character = Cast<ABaseCharacter>(OtherActor);
+	APlayerCharacter* Character = Cast<APlayerCharacter>(OtherActor);
 	if (Character)
 	{
 		Character->SetOverlappingItem(nullptr);

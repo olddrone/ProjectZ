@@ -7,7 +7,7 @@
 #include "CharacterTypes.h"
 #include "CharacterAnimInstance.generated.h"
 
-class ABaseCharacter;
+class APlayerCharacter;
 class UCharacterMovementComponent;
 
 /**
@@ -24,7 +24,7 @@ public:
 
 private:
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	ABaseCharacter* Character;
+	APlayerCharacter* Character;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	UCharacterMovementComponent* CharacterMovmement;
