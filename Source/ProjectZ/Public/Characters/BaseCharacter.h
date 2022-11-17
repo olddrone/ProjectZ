@@ -26,12 +26,19 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void Attack() { }
 	virtual void Die() { }
-	virtual void PlayAttackMontage() { }
 	virtual bool CanAttack() { return false; }
 	UFUNCTION(BlueprintCallable)
 	virtual void AttackEnd() { }
 	void PlayHitMontage(const FName& SectionName);
 	void DirectionalHitReact(const FVector& ImpactPoint);
+	void PlayHitSound(const FVector& ImpactPoint);
+	void SpawnHitParticles(const FVector& ImpactPoint);
+	virtual void HandleDamage(float DamageAmount);
+	void PlayMontageSection(UAnimMontage* Montage, const FName& SectionName);
+	int32 PlayRandomMontageSection(UAnimMontage* Montage, const TArray<FName>& SectionName);
+	virtual int32 PlayAttackMontage();
+	virtual int32 PlayDeathMontage();
+	void DisableCapsule();
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
@@ -49,6 +56,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Montage")
 	UAnimMontage* DeathMontage;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TArray<FName> AttackMontageSections;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TArray<FName> DeathMontageSections;
+
+private:
 	UPROPERTY(EditAnywhere, Category = "Sounds")
 	USoundBase* HitSound;
 
