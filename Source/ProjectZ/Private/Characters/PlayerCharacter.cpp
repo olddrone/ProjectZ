@@ -8,7 +8,6 @@
 #include "Items/Item.h"
 #include "Items/Weapons/Weapon.h"
 #include "Animation/AnimMontage.h"
-#include "Components/BoxComponent.h"
 
 APlayerCharacter::APlayerCharacter()
 {
@@ -55,27 +54,27 @@ void APlayerCharacter::EKeyPressed()
 	AWeapon* OverlappingWeapon = Cast<AWeapon>(OverlappingItem);
 	if (OverlappingWeapon)
 	{
-		OverlappingWeapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
-		CharacterState = ECharacterState::ECS_EquippedOnHandedWeapon;
-		OverlappingItem = nullptr;
-		EquippedWeapon = OverlappingWeapon;
+		EquipWeapon(OverlappingWeapon);
 	}
 	else
 	{
 		if (CanDisarm())
 		{
-			PlayEquipMontage(FName("Unequip"));
-			CharacterState = ECharacterState::ECS_Unequipped;
-			ActionState = EActionState::EAS_EquippingWeapon;
+			Disarm();
 		}
 		else if (CanArm())
 		{
-	
-			PlayEquipMontage(FName("Equip"));
-			CharacterState = ECharacterState::ECS_EquippedOnHandedWeapon;
-			ActionState = EActionState::EAS_EquippingWeapon;
+			Arm();
 		}
 	}
+}
+
+void APlayerCharacter::EquipWeapon(AWeapon* Weapon)
+{
+	Weapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
+	CharacterState = ECharacterState::ECS_EquippedOnHandedWeapon;
+	OverlappingItem = nullptr;
+	EquippedWeapon = Weapon;
 }
 
 void APlayerCharacter::Attack()
@@ -113,6 +112,20 @@ bool APlayerCharacter::CanArm()
 		EquippedWeapon;
 }
 
+void APlayerCharacter::Disarm()
+{
+	PlayEquipMontage(FName("Unequip"));
+	CharacterState = ECharacterState::ECS_Unequipped;
+	ActionState = EActionState::EAS_EquippingWeapon;
+}
+
+void APlayerCharacter::Arm()
+{
+	PlayEquipMontage(FName("Equip"));
+	CharacterState = ECharacterState::ECS_EquippedOnHandedWeapon;
+	ActionState = EActionState::EAS_EquippingWeapon;
+}
+
 void APlayerCharacter::PlayEquipMontage(const FName& SectionName)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
@@ -124,7 +137,7 @@ void APlayerCharacter::PlayEquipMontage(const FName& SectionName)
 	}
 }
 
-void APlayerCharacter::Disarm()
+void APlayerCharacter::AttachWeaponToBack()
 {
 	if (EquippedWeapon)
 	{
@@ -132,7 +145,7 @@ void APlayerCharacter::Disarm()
 	}
 }
 
-void APlayerCharacter::Arm()
+void APlayerCharacter::AttachWeaponToHand()
 {
 	if (EquippedWeapon)
 	{

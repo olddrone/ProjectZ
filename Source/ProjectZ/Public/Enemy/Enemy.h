@@ -27,29 +27,22 @@ public:
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 		class AController* EventInstigator, AActor* DamageCauser) override;
-	void CheckCombatTarget();
-	void CheckPatrolTarget();
+
 	virtual void Destroyed() override;
 
 protected:
 	virtual void BeginPlay() override;
 
 	virtual void Die() override;
-	bool InTargetRange(AActor* Target, double Radius);
-	void MoveToTarget(AActor* Target);
-	AActor* ChoosePatrolTarget();
 	virtual void Attack() override;
 	virtual bool CanAttack() override;
 	virtual void HandleDamage(float DamageAmount) override;
 	virtual int32 PlayDeathMontage() override;
-
-	UFUNCTION()
-	void PawnSeen(APawn* SeenPawn);
+	virtual void AttackEnd() override;
 
 private:
-	void PatrolTimerFinished();
+	void InitializeEnemy();
 
-private:
 	void HideHealthBar();
 	void ShowHealthBar();
 	void LoseInterest();
@@ -63,10 +56,23 @@ private:
 	bool IsDead();
 	bool IsEngaged();
 	void ClearPatrolTimer();
-	bool IsAlive();
+
 
 	void StartAttackTimer();
 	void ClearAttackTimer();
+
+	void CheckCombatTarget();
+	void CheckPatrolTarget();
+	void PatrolTimerFinished();
+
+	bool InTargetRange(AActor* Target, double Radius);
+	void MoveToTarget(AActor* Target);
+	AActor* ChoosePatrolTarget();
+
+	void SpawnDefaultWeapon();
+
+	UFUNCTION()
+	void PawnSeen(APawn* SeenPawn);
 
 private:	
 	UPROPERTY(VisibleAnywhere)
@@ -99,9 +105,9 @@ private:
 	FTimerHandle PatrolTimer;
 
 	UPROPERTY(EditInstanceOnly, Category = "AI Navigation", meta = (AllowPrivateAccess = "true"))
-	float WaitMin;
+	float PatrolWaitMin;
 	UPROPERTY(EditInstanceOnly, Category = "AI Navigation", meta = (AllowPrivateAccess = "true"))
-	float WaitMax;
+	float PatrolWaitMax;
 
 	UPROPERTY(VisibleAnywhere)
 	UPawnSensingComponent* PawnSensing;

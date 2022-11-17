@@ -1,19 +1,16 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Enemy/Enemy.h"
-#include "Components/SkeletalMeshComponent.h"
-#include "ProjectZ/DebugMacros.h"
-#include "Kismet/KismetSystemLibrary.h"
-#include "Components/AttributeComponent.h"
-#include "Components/CapsuleComponent.h"
-#include "HUD/HealthBarComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "AIController.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Perception/PawnSensingComponent.h"
+#include "Components/AttributeComponent.h"
+#include "HUD/HealthBarComponent.h"
 #include "Items/Weapons/Weapon.h"
 
 AEnemy::AEnemy() : CombatRadius(1000.f), AttackRadius(150.f), 
-PatrolRadius(200.f), WaitMin(2.f), WaitMax(5.f)//, EnemyState(EEnemyState::EES_Patrolling)
+PatrolRadius(200.f), PatrolWaitMin(2.f), PatrolWaitMax(5.f)//, EnemyState(EEnemyState::EES_Patrolling)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -22,8 +19,7 @@ PatrolRadius(200.f), WaitMin(2.f), WaitMax(5.f)//, EnemyState(EEnemyState::EES_P
 		ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	GetMesh()->SetCollisionResponseToChannel(
 		ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(
-		ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
 	GetMesh()->SetGenerateOverlapEvents(true);
 
 	HealthBarWidget = CreateDefaultSubobject<UHealthBarComponent>(TEXT("HealthBar"));
@@ -44,19 +40,14 @@ void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (HealthBarWidget)
-	{
-		HealthBarWidget->SetVisibility(false);
-	}
-
-	EnemyController = Cast<AAIController>(GetController());
-	MoveToTarget(PatrolTarget);
-
 	if (PawnSensing)
-	{
 		PawnSensing->OnSeePawn.AddDynamic(this, &AEnemy::PawnSeen);
-	}
 
+	InitializeEnemy();
+}
+
+void AEnemy::SpawnDefaultWeapon()
+{
 	UWorld* World = GetWorld();
 	if (World && WeaponClass)
 	{
@@ -85,7 +76,6 @@ void AEnemy::Tick(float DeltaTime)
 
 void AEnemy::CheckCombatTarget()
 {
-	// ClearAttackTimer();
 	if (IsOutsideCombatRadius())
 	{
 		ClearAttackTimer();
@@ -111,7 +101,7 @@ void AEnemy::CheckPatrolTarget()
 	if (InTargetRange(PatrolTarget, PatrolRadius))
 	{
 		PatrolTarget = ChoosePatrolTarget();
-		const float WaitTime = FMath::RandRange(WaitMin, WaitMax);
+		const float WaitTime = FMath::RandRange(PatrolWaitMin, PatrolWaitMax);
 		GetWorldTimerManager().SetTimer(PatrolTimer, this, &AEnemy::PatrolTimerFinished, WaitTime);
 	}
 }
@@ -177,6 +167,14 @@ void AEnemy::PatrolTimerFinished()
 {
 	MoveToTarget(PatrolTarget);
 
+}
+
+void AEnemy::InitializeEnemy()
+{
+	EnemyController = Cast<AAIController>(GetController());
+	MoveToTarget(PatrolTarget);
+	HideHealthBar();
+	SpawnDefaultWeapon();
 }
 
 void AEnemy::HideHealthBar()
@@ -289,15 +287,15 @@ AActor* AEnemy::ChoosePatrolTarget()
 
 void AEnemy::Attack()
 {
+	EnemyState = EEnemyState::EES_Engaged;
 	Super::Attack();
 	PlayAttackMontage();
 }
 
-
-
 bool AEnemy::CanAttack()
 {
-	return  IsInsideAttackRadius() && !IsAttacking() && !IsDead();
+	return  IsInsideAttackRadius() && !IsAttacking()
+		&& !IsEngaged() && !IsDead();
 }
 
 void AEnemy::HandleDamage(float DamageAmount)
@@ -322,11 +320,6 @@ int32 AEnemy::PlayDeathMontage()
 	return Selection;
 }
 
-bool AEnemy::IsAlive()
-{
-	return Attributes && Attributes->IsAlive();
-}
-
 void AEnemy::PawnSeen(APawn* SeenPawn)
 {
 	const bool bShouldChaseTarget = EnemyState != EEnemyState::EES_Dead &&
@@ -341,6 +334,12 @@ void AEnemy::PawnSeen(APawn* SeenPawn)
 		ChaseTarget();
 	}
 	
+}
+
+void AEnemy::AttackEnd()
+{
+	EnemyState = EEnemyState::EES_NoState;
+	CheckCombatTarget();
 }
 
 void AEnemy::Destroyed()

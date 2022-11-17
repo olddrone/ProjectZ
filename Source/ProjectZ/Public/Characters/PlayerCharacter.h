@@ -21,27 +21,37 @@ public:
 	APlayerCharacter();
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	
 	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 
-	
 protected:
 	virtual void BeginPlay() override;
+
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void Turn(float Value);
 	void LookUp(float Value);
+
 	void EKeyPressed();
+	
+	void EquipWeapon(AWeapon* Weapon);
+
 	virtual void Attack() override;
 	virtual void AttackEnd() override;
 	virtual bool CanAttack() override;
+	
 	bool CanDisarm();
 	bool CanArm();
-	void PlayEquipMontage(const FName& SectionName);
-	UFUNCTION(BlueprintCallable)
 	void Disarm();
-	UFUNCTION(BlueprintCallable)
 	void Arm();
+
+	void PlayEquipMontage(const FName& SectionName);
+	
+	UFUNCTION(BlueprintCallable)
+	void AttachWeaponToBack();
+	UFUNCTION(BlueprintCallable)
+	void AttachWeaponToHand();
 	UFUNCTION(BlueprintCallable)
 	void FinishEquipping();
 
