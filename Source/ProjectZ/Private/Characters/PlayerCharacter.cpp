@@ -2,31 +2,41 @@
 
 
 #include "Characters/PlayerCharacter.h"
-#include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Items/Item.h"
 #include "Items/Weapons/Weapon.h"
 #include "Animation/AnimMontage.h"
 
 APlayerCharacter::APlayerCharacter()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	SetCameraComponent();
 
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationRoll = false;
 	bUseControllerRotationYaw = false;
+
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
 	GetCharacterMovement()->MaxWalkSpeed = 450.f;
 
+	GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
+	GetMesh()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(
+		ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	GetMesh()->SetCollisionResponseToChannel(
+		ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
+	GetMesh()->SetGenerateOverlapEvents(true);
 }
-
 
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	Tags.Add(FName("PlayerCharacter"));
+	Tags.Add(FName("EngageableTarget"));
 }
 
 void APlayerCharacter::MoveForward(float Value)
@@ -86,7 +96,6 @@ void APlayerCharacter::Attack()
 		ActionState = EActionState::EAS_Attacking;
 	}
 }
-
 
 void APlayerCharacter::AttackEnd()
 {
@@ -203,3 +212,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &APlayerCharacter::Attack);
 }
 
+void APlayerCharacter::GetHit_Implementation(const FVector& ImpactPoint)
+{
+	UE_LOG(LogTemp, Warning, TEXT("a"));
+	PlayHitSound(ImpactPoint);
+	SpawnHitParticles(ImpactPoint);
+}

@@ -40,6 +40,10 @@ protected:
 	virtual int32 PlayDeathMontage() override;
 	virtual void AttackEnd() override;
 
+	UFUNCTION(BlueprintCallable)
+	void SetSubWeaponCollisionEnabled(ECollisionEnabled::Type CollisionEnabled);
+
+
 private:
 	void InitializeEnemy();
 
@@ -56,7 +60,6 @@ private:
 	bool IsDead();
 	bool IsEngaged();
 	void ClearPatrolTimer();
-
 
 	void StartAttackTimer();
 	void ClearAttackTimer();
@@ -119,19 +122,23 @@ private:
 	TSubclassOf<AWeapon> WeaponClass;
 
 	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	float PatrollingSpeed = 200.f;
+	float PatrollingSpeed;
 
 	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	float ChasingSpeed = 300.f;
+	float ChasingSpeed;
 
 	FTimerHandle AttackTimer;
 
 	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	float AttackMin = 0.5f;
+	float AttackMin;
 
 	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	float AttackMax = 1.f;
+	float AttackMax;
 
 	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	float DeathLifeSpan = 8.f;
+	float DeathLifeSpan;
+	
+	UPROPERTY(VisibleAnywhere, Category = "Weapon")
+	AWeapon* SubWeapon;
+
 };

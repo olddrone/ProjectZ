@@ -8,9 +8,11 @@
 #include "Components/AttributeComponent.h"
 #include "HUD/HealthBarComponent.h"
 #include "Items/Weapons/Weapon.h"
+#include "Components/BoxComponent.h"
 
 AEnemy::AEnemy() : CombatRadius(1000.f), AttackRadius(150.f), 
-PatrolRadius(200.f), PatrolWaitMin(2.f), PatrolWaitMax(5.f)//, EnemyState(EEnemyState::EES_Patrolling)
+PatrolRadius(200.f), PatrolWaitMin(2.f), PatrolWaitMax(5.f), PatrollingSpeed(200.f), 
+ChasingSpeed(300.f), AttackMin(0.5f), AttackMax(1.f), DeathLifeSpan(8.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -19,7 +21,6 @@ PatrolRadius(200.f), PatrolWaitMin(2.f), PatrolWaitMax(5.f)//, EnemyState(EEnemy
 		ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	GetMesh()->SetCollisionResponseToChannel(
 		ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
-
 	GetMesh()->SetGenerateOverlapEvents(true);
 
 	HealthBarWidget = CreateDefaultSubobject<UHealthBarComponent>(TEXT("HealthBar"));
@@ -40,10 +41,11 @@ void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (PawnSensing)
+	if (PawnSensing) 
 		PawnSensing->OnSeePawn.AddDynamic(this, &AEnemy::PawnSeen);
 
 	InitializeEnemy();
+	Tags.Add(FName("Enemy"));
 }
 
 void AEnemy::SpawnDefaultWeapon()
@@ -54,6 +56,10 @@ void AEnemy::SpawnDefaultWeapon()
 		AWeapon* DefaultWeapon = World->SpawnActor<AWeapon>(WeaponClass);
 		DefaultWeapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
 		EquippedWeapon = DefaultWeapon;
+
+		AWeapon* DefaultWeapon2 = World->SpawnActor<AWeapon>(WeaponClass);
+		DefaultWeapon2->Equip(GetMesh(), FName("LeftHandSocket"), this, this);
+		SubWeapon = DefaultWeapon2;
 	}
 }
 
@@ -82,8 +88,8 @@ void AEnemy::CheckCombatTarget()
 		LoseInterest();
 		if (!IsEngaged())
 			StartPatrolling();
-		
 	}
+
 	else if (IsOutsideAttackRadius() && !IsChasing())
 	{
 		ClearAttackTimer();
@@ -93,6 +99,7 @@ void AEnemy::CheckCombatTarget()
 	else if (CanAttack())
 	{
 		StartAttackTimer();
+
 	}
 }
 
@@ -322,10 +329,11 @@ int32 AEnemy::PlayDeathMontage()
 
 void AEnemy::PawnSeen(APawn* SeenPawn)
 {
-	const bool bShouldChaseTarget = EnemyState != EEnemyState::EES_Dead &&
-		EnemyState != EEnemyState::EES_Chasing && 
-		EnemyState < EEnemyState::EES_Attacking &&
-		SeenPawn->ActorHasTag(FName("PlayerCharacter"));
+	const bool bShouldChaseTarget =
+		EnemyState != EEnemyState::EES_Dead &&
+		EnemyState != EEnemyState::EES_Chasing &&
+		EnemyState < EEnemyState::EES_Attacking&&
+		SeenPawn->ActorHasTag(FName("EngageableTarget"));
 
 	if (bShouldChaseTarget)
 	{
@@ -347,5 +355,14 @@ void AEnemy::Destroyed()
 	if (EquippedWeapon)
 	{
 		EquippedWeapon->Destroy();
+	}
+}
+
+void AEnemy::SetSubWeaponCollisionEnabled(ECollisionEnabled::Type CollisionEnabled)
+{
+	if (SubWeapon && SubWeapon->GetWeaponBox())
+	{
+		SubWeapon->GetWeaponBox()->SetCollisionEnabled(CollisionEnabled);
+		SubWeapon->IgnoreActors.Empty();
 	}
 }
