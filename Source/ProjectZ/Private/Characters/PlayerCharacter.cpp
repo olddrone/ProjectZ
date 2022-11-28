@@ -6,9 +6,13 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "COmponents/AttributeComponent.h"
 #include "Items/Item.h"
 #include "Items/Weapons/Weapon.h"
 #include "Animation/AnimMontage.h"
+#include "HUD/PlayerHUD.h"
+#include "HUD/PlayerOverlay.h"
+
 
 APlayerCharacter::APlayerCharacter()
 {
@@ -36,7 +40,29 @@ APlayerCharacter::APlayerCharacter()
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
 	Tags.Add(FName("EngageableTarget"));
+	InitializePlayerOverlay();
+}
+
+void APlayerCharacter::InitializePlayerOverlay()
+{
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if (PlayerController)
+	{
+		APlayerHUD* PlayerHUD = Cast<APlayerHUD>(PlayerController->GetHUD());
+		if (PlayerHUD)
+		{
+			PlayerOverlay = PlayerHUD->GetPlayerOverlay();
+			if (PlayerOverlay && Attributes)
+			{
+				PlayerOverlay->SetHealthBarPercent(Attributes->GetHealthPercent());
+				PlayerOverlay->SetStaminaBarPercent(1.f);
+				PlayerOverlay->SetMoney(0);
+				PlayerOverlay->SetChip(0);
+			}
+		}
+	}
 }
 
 void APlayerCharacter::MoveForward(float Value)
@@ -108,6 +134,13 @@ bool APlayerCharacter::CanAttack()
 		CharacterState != ECharacterState::ECS_Unequipped;
 }
 
+void APlayerCharacter::Die()
+{
+	Super::Die();
+	ActionState = EActionState::EAS_Dead;
+	DisableMeshCollision();
+}
+
 bool APlayerCharacter::CanDisarm()
 {
 	return ActionState == EActionState::EAS_Unocuupied &&
@@ -123,6 +156,7 @@ bool APlayerCharacter::CanArm()
 
 void APlayerCharacter::Disarm()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Unequip"));
 	PlayEquipMontage(FName("Unequip"));
 	CharacterState = ECharacterState::ECS_Unequipped;
 	ActionState = EActionState::EAS_EquippingWeapon;
@@ -130,6 +164,7 @@ void APlayerCharacter::Disarm()
 
 void APlayerCharacter::Arm()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Equip"));
 	PlayEquipMontage(FName("Equip"));
 	CharacterState = ECharacterState::ECS_EquippedOnHandedWeapon;
 	ActionState = EActionState::EAS_EquippingWeapon;
@@ -163,6 +198,11 @@ void APlayerCharacter::AttachWeaponToHand()
 }
 
 void APlayerCharacter::FinishEquipping()
+{
+	ActionState = EActionState::EAS_Unocuupied;
+}
+
+void APlayerCharacter::HitReactEnd()
 {
 	ActionState = EActionState::EAS_Unocuupied;
 }
@@ -206,15 +246,49 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAxis("Turn", this, &APlayerCharacter::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &APlayerCharacter::LookUp);
 
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &APlayerCharacter::Jump);
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &APlayerCharacter::EKeyPressed);
 
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &APlayerCharacter::Attack);
 }
 
-void APlayerCharacter::GetHit_Implementation(const FVector& ImpactPoint)
+void APlayerCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 {
-	UE_LOG(LogTemp, Warning, TEXT("a"));
-	PlayHitSound(ImpactPoint);
-	SpawnHitParticles(ImpactPoint);
+	Super::GetHit_Implementation(ImpactPoint, Hitter);
+	SetWeaponCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	if (Attributes && Attributes->GetHealthPercent() > 0.f)
+	{
+		ActionState = EActionState::EAS_HitReaction;
+	}
+	
+}
+
+float APlayerCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
+	class AController* EventInstigator, AActor* DamageCauser)
+{
+	HandleDamage(DamageAmount);
+	SeyHUDHealth();
+	return DamageAmount;
+}
+
+void APlayerCharacter::Jump()
+{
+	if (IsUnoccupied())
+	{
+		Super::Jump();
+	}
+}
+
+bool APlayerCharacter::IsUnoccupied()
+{
+	return ActionState == EActionState::EAS_Unocuupied;
+}
+
+void APlayerCharacter::SeyHUDHealth()
+{
+	if (PlayerOverlay && Attributes)
+	{
+		PlayerOverlay->SetHealthBarPercent(Attributes->GetHealthPercent());
+	}
 }

@@ -40,7 +40,7 @@ protected:
 
 private:
 	void BoxTrace(FHitResult& BoxHit);
-	bool ActorIsSameType(AActor* OtherActor);
+	bool ActorIsSameType(AActor* OtherActor, FName type);
 
 public:
 	TArray<AActor*> IgnoreActors;

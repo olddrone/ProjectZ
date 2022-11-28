@@ -78,7 +78,8 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	
-	if (ActorIsSameType(OtherActor))
+	if (ActorIsSameType(OtherActor, "Enemy") ||
+		ActorIsSameType(OtherActor, "EngageableTarget"))
 		return;
 
 	FHitResult BoxHit;
@@ -86,7 +87,8 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 
 	if (BoxHit.GetActor())
 	{
-		if (ActorIsSameType(BoxHit.GetActor()))
+		if (ActorIsSameType(BoxHit.GetActor(), "Enemy") || 
+			ActorIsSameType(BoxHit.GetActor(), "EngageableTarget"))
 			return;
 
 		UGameplayStatics::ApplyDamage(BoxHit.GetActor(), Damage, 
@@ -96,10 +98,10 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 	}
 }
 
-bool AWeapon::ActorIsSameType(AActor* OtherActor)
+bool AWeapon::ActorIsSameType(AActor* OtherActor, FName type)
 {
-	return GetOwner()->ActorHasTag(TEXT("Enemy")) 
-		&& OtherActor->ActorHasTag(TEXT("Enemy"));
+	return GetOwner()->ActorHasTag(type)
+		&& OtherActor->ActorHasTag(type);
 }
 
 void AWeapon::BoxTrace(FHitResult& BoxHit)
@@ -128,7 +130,7 @@ void AWeapon::ExecuteGetHit(FHitResult& BoxHit)
 	IHitInterface* HitInterface = Cast<IHitInterface>(BoxHit.GetActor());
 	if (HitInterface)
 	{
-		HitInterface->Execute_GetHit(BoxHit.GetActor(), BoxHit.ImpactPoint);
+		HitInterface->Execute_GetHit(BoxHit.GetActor(), BoxHit.ImpactPoint, GetOwner());
 	}
 
 }
