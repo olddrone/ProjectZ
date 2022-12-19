@@ -12,11 +12,12 @@
 #include "Animation/AnimMontage.h"
 #include "HUD/PlayerHUD.h"
 #include "HUD/PlayerOverlay.h"
-
+#include "Items/Chip.h"
+#include "Items/Money.h"
 
 APlayerCharacter::APlayerCharacter()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	SetCameraComponent();
 
@@ -25,7 +26,7 @@ APlayerCharacter::APlayerCharacter()
 	bUseControllerRotationYaw = false;
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.f, 400.f, 0.f);
+	GetCharacterMovement()->RotationRate = FRotator(0.f, 720.f, 0.f);
 	GetCharacterMovement()->MaxWalkSpeed = 450.f;
 
 	GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
@@ -134,6 +135,35 @@ bool APlayerCharacter::CanAttack()
 		CharacterState != ECharacterState::ECS_Unequipped;
 }
 
+void APlayerCharacter::Dodge()
+{
+	if (IsOccupied() || !HasEnoughStamina())
+		return;
+	PlayDodgeMontage();
+	ActionState = EActionState::EAS_Dodge;
+	if (Attributes && PlayerOverlay)
+	{
+		Attributes->UseStamina(Attributes->GetDodgeCost());
+		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
+	}
+}
+
+bool APlayerCharacter::HasEnoughStamina()
+{
+	return Attributes && Attributes->GetStamina() > Attributes->GetDodgeCost();
+}
+
+bool APlayerCharacter::IsOccupied()
+{
+	return ActionState != EActionState::EAS_Unocuupied;
+}
+
+void APlayerCharacter::DodgeEnd()
+{
+	Super::DodgeEnd();
+	ActionState = EActionState::EAS_Unocuupied;
+}
+
 void APlayerCharacter::Die()
 {
 	Super::Die();
@@ -235,6 +265,11 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if (Attributes && PlayerOverlay)
+	{
+		Attributes->RegenStamina(DeltaTime);
+		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
+	}
 }
 
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -250,6 +285,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &APlayerCharacter::EKeyPressed);
 
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &APlayerCharacter::Attack);
+	PlayerInputComponent->BindAction("Dodge", IE_Pressed, this, &APlayerCharacter::Dodge);
 }
 
 void APlayerCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
@@ -277,6 +313,29 @@ void APlayerCharacter::Jump()
 	if (IsUnoccupied())
 	{
 		Super::Jump();
+	}
+}
+
+void APlayerCharacter::SetOverlappingItem(AItem* Item)
+{
+	OverlappingItem = Item;
+}
+
+void APlayerCharacter::AddChips(AChip* Chip)
+{
+	if (Attributes && PlayerOverlay)
+	{
+		Attributes->AddChips(Chip->GetValue());
+		PlayerOverlay->SetChip(Attributes->GetChips());
+	}
+}
+
+void APlayerCharacter::AddMoney(AMoney* Money)
+{
+	if (Attributes && PlayerOverlay)
+	{
+		Attributes->AddMoney(Money->GetValue());
+		PlayerOverlay->SetMoney(Attributes->GetMoney());
 	}
 }
 

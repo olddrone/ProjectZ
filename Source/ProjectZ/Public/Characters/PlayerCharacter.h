@@ -5,15 +5,19 @@
 #include "CoreMinimal.h"
 #include "BaseCharacter.h"
 #include "CharacterTypes.h"
+#include "Interfaces/PickupInterface.h"
 #include "PlayerCharacter.generated.h"
 
 class USpringArmComponent;
 class UCameraComponent;
 class AItem;
+class AChip;
+class AMoney;
 class UAnimMontage;
 class UPlayerOverlay;
+
 UCLASS()
-class PROJECTZ_API APlayerCharacter : public ABaseCharacter
+class PROJECTZ_API APlayerCharacter : public ABaseCharacter, public IPickupInterface
 {
 	GENERATED_BODY()
 
@@ -25,9 +29,11 @@ public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 		class AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void Jump() override;
+	virtual void SetOverlappingItem(AItem* Item) override;
+	virtual void AddChips(AChip* Chip) override;
+	virtual void AddMoney(AMoney* Money) override;
 
 
-	FORCEINLINE void SetOverlappingItem(AItem* Item) { OverlappingItem = Item; }
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 	FORCEINLINE EActionState GetActionState() const { return ActionState; }
 
@@ -46,6 +52,11 @@ protected:
 	virtual void Attack() override;
 	virtual void AttackEnd() override;
 	virtual bool CanAttack() override;
+	
+	void Dodge();
+	bool HasEnoughStamina();
+	bool IsOccupied();
+	virtual void DodgeEnd() override;
 	
 	virtual void Die() override;
 

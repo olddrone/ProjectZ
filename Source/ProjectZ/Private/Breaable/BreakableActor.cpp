@@ -2,7 +2,7 @@
 
 #include "Breaable/BreakableActor.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
-#include "Items/Chip.h"
+#include "Items/Money.h"
 #include "Components/BoxComponent.h"
 
 ABreakableActor::ABreakableActor()
@@ -45,11 +45,11 @@ void ABreakableActor::GetHit_Implementation(const FVector& ImpactPoint, AActor* 
 
 	bBroken = true;
 	UWorld* World = GetWorld();
-	if (World && ChipClasses.Num() > 0)
+	if (World && MoneyClasses.Num() > 0)
 	{
 		FVector Location = GetActorLocation();
 		Location.Z += 50.f;
-		const int32 Selection = FMath::RandRange(0, ChipClasses.Num() - 1);
-		World->SpawnActor<AChip>(ChipClasses[Selection], Location, GetActorRotation());
+		const int32 Selection = FMath::RandRange(0, MoneyClasses.Num() - 1);
+		World->SpawnActor<AMoney>(MoneyClasses[Selection], Location, GetActorRotation());
 	}
 }

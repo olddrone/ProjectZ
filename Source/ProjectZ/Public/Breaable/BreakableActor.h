@@ -8,7 +8,7 @@
 #include "BreakableActor.generated.h"
 
 class UGeometryCollectionComponent;
-class AChip;
+class AMoney;
 class UBoxComponent;
 
 UCLASS()
@@ -31,7 +31,7 @@ private:
 	UGeometryCollectionComponent* GetmetryCollection;
 
 	UPROPERTY(EditAnywhere, Category = "Breakable Properties", meta = (AllowPrivateAccess = "true"))
-	TArray<TSubclassOf<AChip>> ChipClasses;
+	TArray<TSubclassOf<AMoney>> MoneyClasses;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UBoxComponent* Box;

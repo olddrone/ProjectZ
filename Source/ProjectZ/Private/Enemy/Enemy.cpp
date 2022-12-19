@@ -8,6 +8,7 @@
 #include "Components/AttributeComponent.h"
 #include "HUD/HealthBarComponent.h"
 #include "Items/Weapons/Weapon.h"
+#include "Items/Chip.h"
 #include "Components/BoxComponent.h"
 
 AEnemy::AEnemy() : CombatRadius(1000.f), AttackRadius(200.f), 
@@ -136,6 +137,21 @@ void AEnemy::Die()
 	SetLifeSpan(DeathLifeSpan);
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 	SetWeaponCollisionEnabled(ECollisionEnabled::NoCollision);
+	SpawnChip();
+
+}
+
+void AEnemy::SpawnChip()
+{
+	UWorld* World = GetWorld();
+	if (World && ChipClass && Attributes)
+	{
+		AChip* SpawnedChip = World->SpawnActor<AChip>(ChipClass, GetActorLocation(), GetActorRotation());
+		if (SpawnedChip)
+		{
+			SpawnedChip->SetValue(Attributes->GetChips());
+		}
+	}
 }
 
 float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,

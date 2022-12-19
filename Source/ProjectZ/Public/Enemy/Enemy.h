@@ -13,6 +13,7 @@ class UHealthBarComponent;
 class AAIController;
 class UPawnSensingComponent;
 class AWeapon;
+class AChip;
 
 UCLASS()
 class PROJECTZ_API AEnemy : public ABaseCharacter
@@ -33,6 +34,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void Die() override;
+	void SpawnChip();
 	virtual void Attack() override;
 	virtual bool CanAttack() override;
 	virtual void HandleDamage(float DamageAmount) override;
@@ -134,4 +136,6 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
 	AWeapon* SubWeapon;
 
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	TSubclassOf<AChip> ChipClass;
 };

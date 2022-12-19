@@ -43,6 +43,8 @@ protected:
 	virtual int32 PlayDeathMontage();
 	void StopAttackMontage();
 
+	virtual void PlayDodgeMontage();
+
 	UFUNCTION(BlueprintCallable)
 	FVector GetTranslationWarpTarget();
 	
@@ -52,6 +54,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	virtual void AttackEnd() { }
 	
+	UFUNCTION(BlueprintCallable)
+	virtual void DodgeEnd() { }
+
 	UFUNCTION(BlueprintCallable)
 	void SetWeaponCollisionEnabled(ECollisionEnabled::Type CollisionEnabled);
 
@@ -87,6 +92,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	UAnimMontage* DeathMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	UAnimMontage* DodgeMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TArray<FName> AttackMontageSections;
