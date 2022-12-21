@@ -78,8 +78,7 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	
-	if (ActorIsSameType(OtherActor, "Enemy") ||
-		ActorIsSameType(OtherActor, "EngageableTarget"))
+	if (ActorIsSameType(OtherActor, "Enemy"))
 		return;
 
 	FHitResult BoxHit;
@@ -87,8 +86,7 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 
 	if (BoxHit.GetActor())
 	{
-		if (ActorIsSameType(BoxHit.GetActor(), "Enemy") || 
-			ActorIsSameType(BoxHit.GetActor(), "EngageableTarget"))
+		if (ActorIsSameType(BoxHit.GetActor(), "Enemy"))
 			return;
 
 		UGameplayStatics::ApplyDamage(BoxHit.GetActor(), Damage, 
@@ -111,6 +109,7 @@ void AWeapon::BoxTrace(FHitResult& BoxHit)
 
 	TArray<AActor*> ActorsToIgnore;
 	ActorsToIgnore.Add(this);
+	ActorsToIgnore.Add(GetOwner());
 
 	for (AActor* Actor : IgnoreActors)
 	{

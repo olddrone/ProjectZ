@@ -11,7 +11,7 @@
 #include "Items/Chip.h"
 #include "Components/BoxComponent.h"
 
-AEnemy::AEnemy() : CombatRadius(1000.f), AttackRadius(200.f), 
+AEnemy::AEnemy() : CombatRadius(1000.f), AttackRadius(200.f), AcceptanceRadius(50.f),
 PatrolRadius(200.f), PatrolWaitMin(2.f), PatrolWaitMax(5.f), PatrollingSpeed(200.f), 
 ChasingSpeed(300.f), AttackMin(0.5f), AttackMax(1.f), DeathLifeSpan(8.f)
 {
@@ -55,12 +55,9 @@ void AEnemy::SpawnDefaultWeapon()
 	if (World && WeaponClass)
 	{
 		AWeapon* DefaultWeapon = World->SpawnActor<AWeapon>(WeaponClass);
-		DefaultWeapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
+		DefaultWeapon->Equip(GetMesh(), FName("WeaponSocket"), this, this);
 		EquippedWeapon = DefaultWeapon;
 
-		AWeapon* DefaultWeapon2 = World->SpawnActor<AWeapon>(WeaponClass);
-		DefaultWeapon2->Equip(GetMesh(), FName("LeftHandSocket"), this, this);
-		SubWeapon = DefaultWeapon2;
 	}
 }
 
@@ -123,6 +120,12 @@ void AEnemy::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 	ClearAttackTimer();
 	SetWeaponCollisionEnabled(ECollisionEnabled::NoCollision);
 	StopAttackMontage();
+
+	if (IsInsideAttackRadius())
+	{
+		if (!IsDead())
+			StartAttackTimer();
+	}
 }
 
 
@@ -146,10 +149,12 @@ void AEnemy::SpawnChip()
 	UWorld* World = GetWorld();
 	if (World && ChipClass && Attributes)
 	{
-		AChip* SpawnedChip = World->SpawnActor<AChip>(ChipClass, GetActorLocation(), GetActorRotation());
+		const FVector SpawnLocation = GetActorLocation() + FVector(0.f, 0.f, 125.f);
+		AChip* SpawnedChip = World->SpawnActor<AChip>(ChipClass, SpawnLocation, GetActorRotation());
 		if (SpawnedChip)
 		{
 			SpawnedChip->SetValue(Attributes->GetChips());
+			SpawnedChip->SetOwner(this);
 		}
 	}
 }
@@ -188,7 +193,7 @@ void AEnemy::MoveToTarget(AActor* Target)
 
 	FAIMoveRequest MoveRequest;
 	MoveRequest.SetGoalActor(Target);
-	MoveRequest.SetAcceptanceRadius(50.f);
+	MoveRequest.SetAcceptanceRadius(AcceptanceRadius);
 	EnemyController->MoveTo(MoveRequest);
 }
 
@@ -372,11 +377,3 @@ void AEnemy::Destroyed()
 	}
 }
 
-void AEnemy::SetSubWeaponCollisionEnabled(ECollisionEnabled::Type CollisionEnabled)
-{
-	if (SubWeapon && SubWeapon->GetWeaponBox())
-	{
-		SubWeapon->GetWeaponBox()->SetCollisionEnabled(CollisionEnabled);
-		SubWeapon->IgnoreActors.Empty();
-	}
-}

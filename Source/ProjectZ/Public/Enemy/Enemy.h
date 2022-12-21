@@ -40,10 +40,6 @@ protected:
 	virtual void HandleDamage(float DamageAmount) override;
 	virtual void AttackEnd() override;
 
-	UFUNCTION(BlueprintCallable)
-	void SetSubWeaponCollisionEnabled(ECollisionEnabled::Type CollisionEnabled);
-
-
 private:
 	void InitializeEnemy();
 
@@ -81,12 +77,14 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	UHealthBarComponent* HealthBarWidget;
 
-
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	double CombatRadius;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	double AttackRadius;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	double AcceptanceRadius;
 
 	UPROPERTY()
 	AAIController* EnemyController;
@@ -110,7 +108,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	UPawnSensingComponent* PawnSensing;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	EEnemyState EnemyState = EEnemyState::EES_Patrolling;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
@@ -133,9 +131,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	float DeathLifeSpan;
 	
-	UPROPERTY(VisibleAnywhere, Category = "Weapon")
-	AWeapon* SubWeapon;
-
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	TSubclassOf<AChip> ChipClass;
 };
