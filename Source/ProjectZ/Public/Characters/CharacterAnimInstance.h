@@ -27,13 +27,14 @@ private:
 	APlayerCharacter* Character;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	UCharacterMovementComponent* CharacterMovmement;
+	UCharacterMovementComponent* CharacterMovement;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float GroundSpeed;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	bool IsFalling;
+
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	ECharacterState CharacterState;

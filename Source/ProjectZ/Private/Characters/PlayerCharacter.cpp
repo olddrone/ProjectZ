@@ -29,6 +29,7 @@ APlayerCharacter::APlayerCharacter()
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 720.f, 0.f);
 	GetCharacterMovement()->MaxWalkSpeed = 450.f;
 
+
 	GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	GetMesh()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(
@@ -169,6 +170,8 @@ void APlayerCharacter::DodgeEnd()
 	ActionState = EActionState::EAS_Unocuupied;
 }
 
+
+
 void APlayerCharacter::Die()
 {
 	Super::Die();
@@ -256,7 +259,7 @@ void APlayerCharacter::SetCameraComponent()
 
 void APlayerCharacter::Move(float Value, EAxis::Type axis)
 {
-	if (ActionState != EActionState::EAS_Unocuupied)
+	if (IsOccupied())
 		return;
 	if (Controller && Value != 0.f)
 	{
@@ -270,9 +273,12 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+
 	if (Attributes && PlayerOverlay)
 	{
+
 		Attributes->RegenStamina(DeltaTime);
+
 		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
 	}
 }
@@ -291,6 +297,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &APlayerCharacter::Attack);
 	PlayerInputComponent->BindAction("Dodge", IE_Pressed, this, &APlayerCharacter::Dodge);
+
+	//PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &APlayerCharacter::SprintStart);
+	//PlayerInputComponent->BindAction("Sprint", IE_Released, this, &APlayerCharacter::SprintEnd);
 }
 
 void APlayerCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)

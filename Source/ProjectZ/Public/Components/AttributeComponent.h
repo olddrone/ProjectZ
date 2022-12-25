@@ -31,6 +31,7 @@ public:
 	FORCEINLINE int32 GetChips() const { return Chips; }
 	FORCEINLINE float GetDodgeCost() const { return DodgeCost; }
 	FORCEINLINE float GetStamina() const { return Stamina; }
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -52,7 +53,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float DodgeCost;
-
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float StaminaRegenRate;
 };

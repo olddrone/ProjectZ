@@ -32,7 +32,7 @@ void AChip::BeginPlay()
 	FHitResult HitResult;
 
 	UKismetSystemLibrary::LineTraceSingleForObjects(this, Start, End, ObjectTypes,
-		false, ActorsToIgnore, EDrawDebugTrace::ForDuration, HitResult, true);
+		false, ActorsToIgnore, EDrawDebugTrace::None, HitResult, true);
 
 	DesiredZ = HitResult.ImpactPoint.Z + 50.f;
 }

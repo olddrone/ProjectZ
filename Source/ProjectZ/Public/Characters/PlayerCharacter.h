@@ -58,6 +58,7 @@ protected:
 	bool IsOccupied();
 	virtual void DodgeEnd() override;
 	
+
 	virtual void Die() override;
 
 	bool CanDisarm();
@@ -103,4 +104,5 @@ private:
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UPlayerOverlay* PlayerOverlay;
+
 };
