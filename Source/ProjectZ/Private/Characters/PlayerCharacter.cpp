@@ -6,7 +6,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
-#include "COmponents/AttributeComponent.h"
+#include "Components/AttributeComponent.h"
 #include "Items/Item.h"
 #include "Items/Weapons/Weapon.h"
 #include "Animation/AnimMontage.h"
@@ -14,6 +14,8 @@
 #include "HUD/PlayerOverlay.h"
 #include "Items/Chip.h"
 #include "Items/Money.h"
+
+#include "Actors/PlayerTrail.h"
 
 APlayerCharacter::APlayerCharacter()
 {
@@ -37,6 +39,8 @@ APlayerCharacter::APlayerCharacter()
 	GetMesh()->SetCollisionResponseToChannel(
 		ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
 	GetMesh()->SetGenerateOverlapEvents(true);
+
+	
 }
 
 void APlayerCharacter::BeginPlay()
@@ -45,6 +49,20 @@ void APlayerCharacter::BeginPlay()
 
 	Tags.Add(FName("EngageableTarget"));
 	InitializePlayerOverlay();
+
+}
+
+void APlayerCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+
+	if (Attributes && PlayerOverlay)
+	{
+		Attributes->RegenStamina(DeltaTime);
+		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
+	}
+
 }
 
 void APlayerCharacter::InitializePlayerOverlay()
@@ -127,7 +145,9 @@ void APlayerCharacter::Attack()
 	{
 		PlayAttackMontage();
 		ActionState = EActionState::EAS_Attacking;
+		StartTrail(EActionState::EAS_Attacking);
 	}
+	
 }
 
 void APlayerCharacter::AttackEnd()
@@ -147,6 +167,8 @@ void APlayerCharacter::Dodge()
 		return;
 	PlayDodgeMontage();
 	ActionState = EActionState::EAS_Dodge;
+	StartTrail(EActionState::EAS_Dodge);
+
 	if (Attributes && PlayerOverlay)
 	{
 		Attributes->UseStamina(Attributes->GetDodgeCost());
@@ -170,8 +192,6 @@ void APlayerCharacter::DodgeEnd()
 	ActionState = EActionState::EAS_Unocuupied;
 }
 
-
-
 void APlayerCharacter::Die()
 {
 	Super::Die();
@@ -194,7 +214,6 @@ bool APlayerCharacter::CanArm()
 
 void APlayerCharacter::Disarm()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Unequip"));
 	PlayEquipMontage(FName("Unequip"));
 	CharacterState = ECharacterState::ECS_Unequipped;
 	ActionState = EActionState::EAS_EquippingWeapon;
@@ -202,7 +221,6 @@ void APlayerCharacter::Disarm()
 
 void APlayerCharacter::Arm()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Equip"));
 	PlayEquipMontage(FName("Equip"));
 	CharacterState = ECharacterState::ECS_EquippedOnHandedWeapon;
 	ActionState = EActionState::EAS_EquippingWeapon;
@@ -266,20 +284,6 @@ void APlayerCharacter::Move(float Value, EAxis::Type axis)
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
 		const FVector Direction(FRotationMatrix(YawRotation).GetUnitAxis(axis));
 		AddMovementInput(Direction, Value);
-	}
-}
-
-void APlayerCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-
-	if (Attributes && PlayerOverlay)
-	{
-
-		Attributes->RegenStamina(DeltaTime);
-
-		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
 	}
 }
 
@@ -363,5 +367,40 @@ void APlayerCharacter::SeyHUDHealth()
 	if (PlayerOverlay && Attributes)
 	{
 		PlayerOverlay->SetHealthBarPercent(Attributes->GetHealthPercent());
+	}
+}
+
+void APlayerCharacter::StartTrail(EActionState Action)
+{
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.Owner = this;
+	FRotator rotator = GetActorRotation();
+	FVector  SpawnLocation = GetActorLocation();
+	SpawnLocation.Z -= 90;
+	rotator.Yaw -= 90;
+	auto GTrail = Cast<APlayerTrail>(GetWorld()->SpawnActor<AActor>(
+		ActorToSpawn, SpawnLocation, rotator, SpawnParams));
+	if (GTrail)
+	{
+		GTrail->Init(GetMesh());
+	}
+
+	if (ActionState == Action)
+	{
+		FTimerDelegate TimerDel;
+		TimerDel.BindUFunction(this, FName(TEXT("TrailTimerReset")), Action);
+		GetWorldTimerManager().SetTimer(
+			TrailTimerHandle,
+			TimerDel,
+			AutomaticTrailRate,
+			false);
+	}
+}
+
+void APlayerCharacter::TrailTimerReset(EActionState Action)
+{
+	if (ActionState == Action)
+	{
+		StartTrail(Action);
 	}
 }

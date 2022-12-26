@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "BaseCharacter.h"
 #include "CharacterTypes.h"
+#include "Components/TimelineComponent.h"
 #include "Interfaces/PickupInterface.h"
 #include "PlayerCharacter.generated.h"
 
@@ -84,6 +85,8 @@ private:
 	void SeyHUDHealth();
 	bool IsUnoccupied();
 
+
+	
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* CameraArm;
@@ -104,5 +107,17 @@ private:
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UPlayerOverlay* PlayerOverlay;
+
+protected:
+	void StartTrail(EActionState Action);
+	UFUNCTION()
+	void TrailTimerReset(EActionState Action);
+
+private:
+	FTimerHandle TrailTimerHandle;
+	float AutomaticTrailRate = 0.05f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Spawning")
+	TSubclassOf<AActor> ActorToSpawn;
 
 };
