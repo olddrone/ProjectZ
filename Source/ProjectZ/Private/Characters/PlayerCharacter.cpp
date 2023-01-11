@@ -14,8 +14,8 @@
 #include "HUD/PlayerOverlay.h"
 #include "Items/Chip.h"
 #include "Items/Money.h"
-
 #include "Actors/PlayerTrail.h"
+
 
 APlayerCharacter::APlayerCharacter()
 {
@@ -39,7 +39,6 @@ APlayerCharacter::APlayerCharacter()
 	GetMesh()->SetCollisionResponseToChannel(
 		ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
 	GetMesh()->SetGenerateOverlapEvents(true);
-
 	
 }
 
@@ -62,7 +61,8 @@ void APlayerCharacter::Tick(float DeltaTime)
 		Attributes->RegenStamina(DeltaTime);
 		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
 	}
-
+	
+	
 }
 
 void APlayerCharacter::InitializePlayerOverlay()
@@ -165,7 +165,11 @@ void APlayerCharacter::Dodge()
 {
 	if (IsOccupied() || !HasEnoughStamina())
 		return;
+
+	SetActorRotation(GetLastMovementInputVector().Rotation().Quaternion());
+
 	PlayDodgeMontage();
+	DisableMeshCollision();
 	ActionState = EActionState::EAS_Dodge;
 	StartTrail(EActionState::EAS_Dodge);
 
@@ -194,9 +198,10 @@ void APlayerCharacter::DodgeEnd()
 
 void APlayerCharacter::Die()
 {
+	DisableMeshCollision();
 	Super::Die();
 	ActionState = EActionState::EAS_Dead;
-	DisableMeshCollision();
+	
 }
 
 bool APlayerCharacter::CanDisarm()
@@ -322,7 +327,14 @@ float APlayerCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const
 	class AController* EventInstigator, AActor* DamageCauser)
 {
 	HandleDamage(DamageAmount);
-	SeyHUDHealth();
+
+	if (IsAlive())
+	{
+		Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+	}
+	else
+		Die();
+	SetHUDHealth();
 	return DamageAmount;
 }
 
@@ -362,7 +374,7 @@ bool APlayerCharacter::IsUnoccupied()
 	return ActionState == EActionState::EAS_Unocuupied;
 }
 
-void APlayerCharacter::SeyHUDHealth()
+void APlayerCharacter::SetHUDHealth()
 {
 	if (PlayerOverlay && Attributes)
 	{

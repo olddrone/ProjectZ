@@ -32,6 +32,8 @@ public:
 	FORCEINLINE float GetDodgeCost() const { return DodgeCost; }
 	FORCEINLINE float GetStamina() const { return Stamina; }
 
+	FORCEINLINE float GetHealth() const { return Health; }
+
 protected:
 	virtual void BeginPlay() override;
 

@@ -58,7 +58,6 @@ protected:
 	bool HasEnoughStamina();
 	bool IsOccupied();
 	virtual void DodgeEnd() override;
-	
 
 	virtual void Die() override;
 
@@ -82,11 +81,9 @@ private:
 	void SetCameraComponent();
 	void Move(float Value, EAxis::Type axis);
 	void InitializePlayerOverlay();
-	void SeyHUDHealth();
+	void SetHUDHealth();
 	bool IsUnoccupied();
 
-
-	
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* CameraArm;

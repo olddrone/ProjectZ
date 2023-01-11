@@ -45,6 +45,19 @@ void ABaseCharacter::Tick(float DeltaTime)
 
 }
 
+float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
+	AController* EventInstigator, AActor* DamageCauser)
+{
+	FVector HitLocation = DamageCauser->GetActorLocation();
+
+	DirectionalHitReact(HitLocation);
+
+	PlayHitSound(HitLocation);
+	SpawnHitParticles(HitLocation);
+
+	return DamageAmount;
+}
+
 void ABaseCharacter::SetWeaponCollisionEnabled(ECollisionEnabled::Type CollisionEnabled)
 {
 	if (EquippedWeapon && EquippedWeapon->GetWeaponBox())
@@ -223,4 +236,9 @@ bool ABaseCharacter::IsAlive()
 void ABaseCharacter::DisableMeshCollision()
 {
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
+void ABaseCharacter::AbleMeshCollision()
+{
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 }

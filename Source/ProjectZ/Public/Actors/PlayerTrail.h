@@ -24,8 +24,11 @@ public:
 	void Init(USkeletalMeshComponent* Pawn);
 
 private:
+	UPROPERTY(EditAnywhere, Category = "Comp", meta = (AllowPrivateAccess = "true"))
 	UPoseableMeshComponent* PoseableMesh;
+	UPROPERTY(EditAnywhere, Category = "Comp", meta = (AllowPrivateAccess = "true"))
 	UMaterial* Material;
+	UPROPERTY(VisibleAnywhere, Category = "Comp", meta = (AllowPrivateAccess = "true"))
 	TArray<UMaterialInstanceDynamic*> Materials;
 
 	float	fAlphaCount;

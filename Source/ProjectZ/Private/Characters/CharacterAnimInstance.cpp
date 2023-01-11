@@ -27,5 +27,7 @@ void UCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		CharacterState = Character->GetCharacterState();
 		ActionState = Character->GetActionState();
 		DeathPose = Character->GetDeathPose();
+		
+		ZVelocity = Character->GetVelocity().Z;
 	}
 }

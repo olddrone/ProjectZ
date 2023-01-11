@@ -20,7 +20,9 @@ class PROJECTZ_API ABaseCharacter : public ACharacter, public IHitInterface
 public:
 	ABaseCharacter();
 	virtual void Tick(float DeltaTime) override;
-	
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, 
+		AController* EventInstigator, AActor* DamageCauser) override;
+
 	FORCEINLINE TEnumAsByte<EDeathPose> GetDeathPose() const { return DeathPose; }
 protected:
 	virtual void BeginPlay() override;
@@ -36,6 +38,9 @@ protected:
 	virtual bool CanAttack() { return false; }
 	bool IsAlive();
 	void DisableMeshCollision();
+
+	UFUNCTION(BlueprintCallable)
+	void AbleMeshCollision();
 
 	void PlayHitMontage(const FName& SectionName);
 	virtual int32 PlayAttackMontage();
