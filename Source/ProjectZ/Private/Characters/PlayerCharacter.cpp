@@ -16,8 +16,10 @@
 #include "Items/Money.h"
 #include "Actors/PlayerTrail.h"
 
+#include "Kismet/KismetMathLibrary.h"
+#include "ProjectZ/DebugMacros.h"
 
-APlayerCharacter::APlayerCharacter()
+APlayerCharacter::APlayerCharacter() : bSprint(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -29,7 +31,7 @@ APlayerCharacter::APlayerCharacter()
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 720.f, 0.f);
-	GetCharacterMovement()->MaxWalkSpeed = 450.f;
+	SetWalkSpeed(Walk);
 
 
 	GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
@@ -39,7 +41,7 @@ APlayerCharacter::APlayerCharacter()
 	GetMesh()->SetCollisionResponseToChannel(
 		ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
 	GetMesh()->SetGenerateOverlapEvents(true);
-	
+
 }
 
 void APlayerCharacter::BeginPlay()
@@ -55,14 +57,28 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-
 	if (Attributes && PlayerOverlay)
 	{
-		Attributes->RegenStamina(DeltaTime);
+		if (bSprint)
+		{
+			if (Sprintable())
+			{
+				Attributes->UseTickStamina(DeltaTime);
+				Sprint();
+				if (Check)
+					StartTimer();
+				
+			}
+			else
+				SprintEnd();
+			
+		}	
+		else
+			Attributes->RegenStamina(DeltaTime);
+		
 		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
 	}
-	
-	
+
 }
 
 void APlayerCharacter::InitializePlayerOverlay()
@@ -110,7 +126,7 @@ void APlayerCharacter::EKeyPressed()
 	AWeapon* OverlappingWeapon = Cast<AWeapon>(OverlappingItem);
 	if (OverlappingWeapon)
 	{
-		
+
 		if (EquippedWeapon)
 		{
 			EquippedWeapon->Destroy();
@@ -133,21 +149,26 @@ void APlayerCharacter::EKeyPressed()
 void APlayerCharacter::EquipWeapon(AWeapon* Weapon)
 {
 	Weapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
-	CharacterState = ECharacterState::ECS_EquippedOnHandedWeapon;
+	CharacterState = ECharacterState::ECS_OneHandedWeapon;
 	OverlappingItem = nullptr;
 	EquippedWeapon = Weapon;
 }
 
 void APlayerCharacter::Attack()
 {
+	if (GetActionState() == EActionState::EAS_Sprint)
+	{
+		SprintEnd();
+	}
+
 	Super::Attack();
 	if (CanAttack())
 	{
 		PlayAttackMontage();
-		ActionState = EActionState::EAS_Attacking;
+		SetActionState(EActionState::EAS_Attacking);
 		StartTrail(EActionState::EAS_Attacking);
 	}
-	
+
 }
 
 void APlayerCharacter::AttackEnd()
@@ -187,21 +208,26 @@ bool APlayerCharacter::HasEnoughStamina()
 
 bool APlayerCharacter::IsOccupied()
 {
-	return ActionState != EActionState::EAS_Unocuupied;
+	return ActionState != EActionState::EAS_Unocuupied &&
+		ActionState != EActionState::EAS_Sprint;
 }
 
 void APlayerCharacter::DodgeEnd()
 {
 	Super::DodgeEnd();
-	ActionState = EActionState::EAS_Unocuupied;
+	if (bSprint)
+		Sprint();
+	else
+		SetActionState(EActionState::EAS_Unocuupied);
+
 }
 
 void APlayerCharacter::Die()
 {
 	DisableMeshCollision();
 	Super::Die();
-	ActionState = EActionState::EAS_Dead;
-	
+	SetActionState(EActionState::EAS_Dead);
+
 }
 
 bool APlayerCharacter::CanDisarm()
@@ -227,7 +253,7 @@ void APlayerCharacter::Disarm()
 void APlayerCharacter::Arm()
 {
 	PlayEquipMontage(FName("Equip"));
-	CharacterState = ECharacterState::ECS_EquippedOnHandedWeapon;
+	CharacterState = ECharacterState::ECS_OneHandedWeapon;
 	ActionState = EActionState::EAS_EquippingWeapon;
 }
 
@@ -238,7 +264,7 @@ void APlayerCharacter::PlayEquipMontage(const FName& SectionName)
 	{
 		AnimInstance->Montage_Play(EquipMontage);
 		AnimInstance->Montage_JumpToSection(SectionName, EquipMontage);
-		
+
 	}
 }
 
@@ -260,12 +286,25 @@ void APlayerCharacter::AttachWeaponToHand()
 
 void APlayerCharacter::FinishEquipping()
 {
-	ActionState = EActionState::EAS_Unocuupied;
+	SetActionState(EActionState::EAS_Unocuupied);
 }
 
 void APlayerCharacter::HitReactEnd()
 {
-	ActionState = EActionState::EAS_Unocuupied;
+	SetActionState(EActionState::EAS_Unocuupied);
+}
+
+void APlayerCharacter::SprintStart()
+{
+	bSprint = true;
+	
+}
+
+void APlayerCharacter::SprintEnd()
+{
+	bSprint = false;
+	SetActionState(EActionState::EAS_Unocuupied);
+	SetWalkSpeed(Walk);
 }
 
 void APlayerCharacter::SetCameraComponent()
@@ -307,8 +346,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &APlayerCharacter::Attack);
 	PlayerInputComponent->BindAction("Dodge", IE_Pressed, this, &APlayerCharacter::Dodge);
 
-	//PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &APlayerCharacter::SprintStart);
-	//PlayerInputComponent->BindAction("Sprint", IE_Released, this, &APlayerCharacter::SprintEnd);
+	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &APlayerCharacter::SprintStart);
+	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &APlayerCharacter::SprintEnd);
 }
 
 void APlayerCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
@@ -320,7 +359,7 @@ void APlayerCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor*
 	{
 		ActionState = EActionState::EAS_HitReaction;
 	}
-	
+
 }
 
 float APlayerCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
@@ -369,11 +408,6 @@ void APlayerCharacter::AddMoney(AMoney* Money)
 	}
 }
 
-bool APlayerCharacter::IsUnoccupied()
-{
-	return ActionState == EActionState::EAS_Unocuupied;
-}
-
 void APlayerCharacter::SetHUDHealth()
 {
 	if (PlayerOverlay && Attributes)
@@ -382,7 +416,37 @@ void APlayerCharacter::SetHUDHealth()
 	}
 }
 
+bool APlayerCharacter::Sprintable()
+{
+	return HasEnoughStamina() &&
+		UKismetMathLibrary::VSizeXY(GetCharacterMovement()->Velocity) > 0.f;
+}
+
+void APlayerCharacter::SetWalkSpeed(float WalkSpeed)
+{
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+}
+
+void APlayerCharacter::Sprint()
+{
+	SetActionState(EActionState::EAS_Sprint);
+	//StartTrail(EActionState::EAS_Sprint);
+	SetWalkSpeed(Run);
+}
+
 void APlayerCharacter::StartTrail(EActionState Action)
+{
+	MakeTrail();
+
+	if (ActionState == Action)
+	{
+		FTimerDelegate TimerDel;
+		TimerDel.BindUFunction(this, FName(TEXT("TrailTimerReset")), Action);
+		GetWorldTimerManager().SetTimer(TrailTimerHandle, TimerDel, AutomaticTrailRate, false);
+	}
+}
+
+void APlayerCharacter::MakeTrail()
 {
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.Owner = this;
@@ -396,16 +460,22 @@ void APlayerCharacter::StartTrail(EActionState Action)
 	{
 		GTrail->Init(GetMesh());
 	}
+}
 
-	if (ActionState == Action)
+void APlayerCharacter::StartTimer()
+{
+	Check = false;
+	GetWorldTimerManager().SetTimer(Timer, this, &APlayerCharacter::TEST, Rate, true);
+}
+
+void APlayerCharacter::TEST()
+{
+	if (Check == false)
 	{
-		FTimerDelegate TimerDel;
-		TimerDel.BindUFunction(this, FName(TEXT("TrailTimerReset")), Action);
-		GetWorldTimerManager().SetTimer(
-			TrailTimerHandle,
-			TimerDel,
-			AutomaticTrailRate,
-			false);
+		GetWorldTimerManager().ClearTimer(Timer);
+		StartTimer();
+		Check = true;
+		MakeTrail();
 	}
 }
 

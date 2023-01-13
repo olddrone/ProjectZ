@@ -17,6 +17,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, 
 		FActorComponentTickFunction* ThisTickFunction) override;
 	void RegenStamina(float DeltaTime);
+	void UseTickStamina(float DeltaTime);
 
 	void ReceiveDamage(float Damage);
 	void UseStamina(float StaminaCost);
@@ -55,6 +56,10 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float DodgeCost;
+
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	float SprintCost;
+
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float StaminaRegenRate;
 };

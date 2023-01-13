@@ -4,7 +4,7 @@
 
 UAttributeComponent::UAttributeComponent() : Health(100.f), MaxHealth(100.f),
 Money(0), Chips(0), Stamina(100.f), MaxStamina(100.f), 
-DodgeCost(14.f), StaminaRegenRate(8.f)
+DodgeCost(14.f), StaminaRegenRate(8.f), SprintCost(10.f)
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
@@ -27,6 +27,11 @@ void UAttributeComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 void UAttributeComponent::RegenStamina(float DeltaTime)
 {
 	Stamina = FMath::Clamp(Stamina + StaminaRegenRate * DeltaTime, 0.f, MaxStamina);
+}
+
+void UAttributeComponent::UseTickStamina(float DeltaTime)
+{
+	Stamina = FMath::Clamp(Stamina - SprintCost * DeltaTime, 0.f, MaxStamina);
 }
 
 void UAttributeComponent::ReceiveDamage(float Damage)

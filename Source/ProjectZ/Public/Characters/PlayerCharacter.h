@@ -36,8 +36,9 @@ public:
 
 
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
+	FORCEINLINE void SetActionState(EActionState Actions) { ActionState = Actions; }
 	FORCEINLINE EActionState GetActionState() const { return ActionState; }
-
+	
 protected:
 	virtual void BeginPlay() override;
 	
@@ -77,12 +78,27 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void HitReactEnd();
 
+	void SprintStart();
+	void SprintEnd();
+
 private:
 	void SetCameraComponent();
 	void Move(float Value, EAxis::Type axis);
 	void InitializePlayerOverlay();
 	void SetHUDHealth();
-	bool IsUnoccupied();
+	
+	FORCEINLINE bool IsUnoccupied() const 
+	{ 
+		return GetActionState() == EActionState::EAS_Unocuupied ||
+		ActionState == EActionState::EAS_Sprint; 
+	}
+	
+	bool Sprintable();
+
+	void SetWalkSpeed(float WalkSpeed);
+
+	void Sprint();
+
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Camera", meta = (AllowPrivateAccess = "true"))
@@ -99,7 +115,7 @@ private:
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
 	
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
 	EActionState ActionState = EActionState::EAS_Unocuupied;
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
@@ -110,6 +126,8 @@ protected:
 	UFUNCTION()
 	void TrailTimerReset(EActionState Action);
 
+	void MakeTrail();
+
 private:
 	FTimerHandle TrailTimerHandle;
 	float AutomaticTrailRate = 0.05f;
@@ -117,4 +135,18 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning")
 	TSubclassOf<AActor> ActorToSpawn;
 
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float Walk = 450.f;
+
+	UPROPERTY(EditAnywhere, Category = "Movement")
+	float Run = 720.f;
+
+	//UPROPERTY(EditDefaultsOnly, Category = "Spawning")
+	bool bSprint;
+
+	FTimerHandle Timer;
+	float Rate = 0.025f;
+	void StartTimer();
+	void TEST();
+	bool Check = true;
 };

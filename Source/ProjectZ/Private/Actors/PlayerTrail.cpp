@@ -12,18 +12,6 @@ APlayerTrail::APlayerTrail() : bSpawned(false)
 	PoseableMesh = CreateDefaultSubobject<UPoseableMeshComponent>(TEXT("POSEABLEMESH"));
 	RootComponent = PoseableMesh;
 
-	/*ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_PoseMesh(
-		TEXT("SkeletalMesh'/Game/CPStreetBoy/Meshes/SK_CPStreetBoy.SK_CPStreetBoy'"));
-	if (SK_PoseMesh.Succeeded())
-	{
-		PoseableMesh->SetSkeletalMesh(SK_PoseMesh.Object);
-	}
-	ConstructorHelpers::FObjectFinder<UMaterial> M_GhostTail(
-		TEXT("Material'/Game/CPStreetBoy/Materials/M_Trail/M_TrailBody.M_TrailBody'"));
-	if (M_GhostTail.Succeeded())
-	{
-		Material = M_GhostTail.Object;
-	}*/
 }
 
 
