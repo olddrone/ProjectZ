@@ -53,6 +53,11 @@ protected:
 
 	virtual void Attack() override;
 	virtual void AttackEnd() override;
+	
+	virtual void ComboAble() override;
+	virtual void NextCombo()override;
+	virtual void ComboDisable() override;
+
 	virtual bool CanAttack() override;
 	
 	void Dodge();
@@ -80,6 +85,11 @@ protected:
 
 	void SprintStart();
 	void SprintEnd();
+
+	virtual int32 PlayAttackMontage() override;
+
+	UFUNCTION(BlueprintCallable)
+	EPhysicalSurface GetSurfaceType();
 
 private:
 	void SetCameraComponent();
@@ -149,4 +159,9 @@ private:
 	void StartTimer();
 	void TEST();
 	bool Check = true;
+
+	int32 ComboAttackNum = 1;
+
+	bool bSaveAttack = false;
+	bool bComboAtteck = false;
 };

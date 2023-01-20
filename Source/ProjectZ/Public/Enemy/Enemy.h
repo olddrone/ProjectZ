@@ -28,7 +28,7 @@ public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 		class AController* EventInstigator, AActor* DamageCauser) override;
 
-	virtual void Destroyed() override;
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -122,14 +122,14 @@ private:
 
 	FTimerHandle AttackTimer;
 
+
+
 	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	float AttackMin;
 
 	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	float AttackMax;
 
-	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	float DeathLifeSpan;
 	
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	TSubclassOf<AChip> ChipClass;

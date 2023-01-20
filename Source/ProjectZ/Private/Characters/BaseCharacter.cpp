@@ -26,14 +26,20 @@ void ABaseCharacter::BeginPlay()
 
 void ABaseCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 {
-	if (IsAlive() && Hitter)
+	FVector GetLocation = (Hitter) ? 
+		Hitter->GetActorLocation() : 
+		GetActorRotation().Vector() * -1.f;
+	
+
+	if (IsAlive())
 	{
-		DirectionalHitReact(Hitter->GetActorLocation());
+		DirectionalHitReact(GetLocation);
 	}
 	else
 	{
 		Die();
 	}
+
 
 	PlayHitSound(ImpactPoint);
 	SpawnHitParticles(ImpactPoint);
@@ -89,13 +95,23 @@ void ABaseCharacter::Die()
 {
 	Tags.Add(FName("Dead"));
 	PlayDeathMontage();
+
 }
+
+void ABaseCharacter::DeathEnd()
+{
+	Destroy();
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->Destroy();
+	}
+}
+
 
 void ABaseCharacter::DirectionalHitReact(const FVector& ImpactPoint)
 {
 	const FVector Forward = GetActorForwardVector();
-	const FVector ImpactLowerd(ImpactPoint.X, ImpactPoint.Y, GetActorLocation().Z);
-	const FVector ToHit = (ImpactLowerd - GetActorLocation()).GetSafeNormal();
+	SetToHitVector(ImpactPoint);
 	const double CosTheTa = FVector::DotProduct(Forward, ToHit);
 	double Theta = FMath::Acos(CosTheTa);
 	Theta = FMath::RadiansToDegrees(Theta);
@@ -147,6 +163,11 @@ void ABaseCharacter::HandleDamage(float DamageAmount)
 	}
 }
 
+void ABaseCharacter::PlayMontageSection(const FName& SectionName)
+{
+	PlayMontageSection(AttackMontage, SectionName);
+}
+
 void ABaseCharacter::PlayMontageSection(UAnimMontage* Montage, const FName& SectionName)
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
@@ -173,6 +194,27 @@ int32 ABaseCharacter::PlayRandomMontageSection(UAnimMontage* Montage, const TArr
 	PlayMontageSection(Montage, SectionName[Selection]);
 	return Selection;
 }
+
+void ABaseCharacter::DoRagdoll()
+{
+	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+	GetMesh()->SetSimulatePhysics(true);
+	DoRagdollImpulse();
+}
+
+void ABaseCharacter::DoRagdollImpulse()
+{
+	GetMesh()->SetPhysicsLinearVelocity(FVector::ZeroVector);
+	GetMesh()->AddImpulseToAllBodiesBelow(ToHit * -5000.0f, NAME_None);
+}
+
+void ABaseCharacter::SetToHitVector(const FVector& ImpactPoint)
+{
+	const FVector ImpactLowerd(ImpactPoint.X, ImpactPoint.Y, GetActorLocation().Z);
+	ToHit = (ImpactLowerd - GetActorLocation()).GetSafeNormal();
+}
+
+
 
 int32 ABaseCharacter::PlayDeathMontage()
 {

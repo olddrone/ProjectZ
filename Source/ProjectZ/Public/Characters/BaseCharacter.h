@@ -24,6 +24,7 @@ public:
 		AController* EventInstigator, AActor* DamageCauser) override;
 
 	FORCEINLINE TEnumAsByte<EDeathPose> GetDeathPose() const { return DeathPose; }
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter) override;
@@ -59,12 +60,28 @@ protected:
 	virtual void AttackEnd() { }
 	
 	UFUNCTION(BlueprintCallable)
+	virtual void ComboAble() { }
+
+	UFUNCTION(BlueprintCallable)
+	virtual void NextCombo() { }
+
+	UFUNCTION(BlueprintCallable)
+	virtual void ComboDisable() { }
+
+	UFUNCTION(BlueprintCallable)
+	void DeathEnd();
+
+	UFUNCTION(BlueprintCallable)
 	virtual void DodgeEnd() { }
 
 	UFUNCTION(BlueprintCallable)
 	void SetWeaponCollisionEnabled(ECollisionEnabled::Type CollisionEnabled);
 
-	
+	void DoRagdoll();
+	void DoRagdollImpulse();
+	void SetToHitVector(const FVector& ImpactPoint);
+
+	void PlayMontageSection(const FName& SectionName);
 private:
 	void PlayMontageSection(UAnimMontage* Montage, const FName& SectionName);
 	int32 PlayRandomMontageSection(UAnimMontage* Montage, const TArray<FName>& SectionName);
@@ -81,6 +98,7 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly)
 	TEnumAsByte<EDeathPose> DeathPose;
+
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Combat")
@@ -109,5 +127,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	double WarpTargetDistance;
+
+	FVector ToHit = FVector(0, 0, 0);
 
 };

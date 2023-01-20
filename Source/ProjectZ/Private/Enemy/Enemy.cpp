@@ -13,7 +13,7 @@
 
 AEnemy::AEnemy() : CombatRadius(1000.f), AttackRadius(200.f), AcceptanceRadius(50.f),
 PatrolRadius(200.f), PatrolWaitMin(2.f), PatrolWaitMax(5.f), PatrollingSpeed(200.f), 
-ChasingSpeed(300.f), AttackMin(0.5f), AttackMax(1.f), DeathLifeSpan(8.f)
+ChasingSpeed(300.f), AttackMin(0.5f), AttackMax(1.f)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -137,11 +137,11 @@ void AEnemy::Die()
 	ClearAttackTimer();
 	HideHealthBar();
 	DisableCapsule();
-	SetLifeSpan(DeathLifeSpan);
+	
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 	SetWeaponCollisionEnabled(ECollisionEnabled::NoCollision);
 	SpawnChip();
-
+	DoRagdoll();
 }
 
 void AEnemy::SpawnChip()
@@ -368,12 +368,3 @@ void AEnemy::AttackEnd()
 	EnemyState = EEnemyState::EES_NoState;
 	CheckCombatTarget();
 }
-
-void AEnemy::Destroyed()
-{
-	if (EquippedWeapon)
-	{
-		EquippedWeapon->Destroy();
-	}
-}
-

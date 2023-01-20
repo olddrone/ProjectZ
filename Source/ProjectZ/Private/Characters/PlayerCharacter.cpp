@@ -15,6 +15,8 @@
 #include "Items/Chip.h"
 #include "Items/Money.h"
 #include "Actors/PlayerTrail.h"
+#include "ProjectZ/ProjectZ.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
 
 #include "Kismet/KismetMathLibrary.h"
 #include "ProjectZ/DebugMacros.h"
@@ -36,10 +38,13 @@ APlayerCharacter::APlayerCharacter() : bSprint(false)
 
 	GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
 	GetMesh()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	GetMesh()->SetCollisionResponseToChannel(
-		ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
-	GetMesh()->SetCollisionResponseToChannel(
-		ECollisionChannel::ECC_WorldDynamic, ECollisionResponse::ECR_Overlap);
+
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera,
+		ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility,
+		ECollisionResponse::ECR_Block);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic,
+		ECollisionResponse::ECR_Overlap);
 	GetMesh()->SetGenerateOverlapEvents(true);
 
 }
@@ -57,6 +62,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	
 	if (Attributes && PlayerOverlay)
 	{
 		if (bSprint)
@@ -154,19 +160,26 @@ void APlayerCharacter::EquipWeapon(AWeapon* Weapon)
 	EquippedWeapon = Weapon;
 }
 
+// 코드 중복, 수정 필요
 void APlayerCharacter::Attack()
 {
 	if (GetActionState() == EActionState::EAS_Sprint)
-	{
 		SprintEnd();
-	}
-
+	
 	Super::Attack();
+	
+	if (bSaveAttack && ActionState != EActionState::EAS_Dead)
+	{
+		bComboAtteck = true;
+	}
+	
 	if (CanAttack())
 	{
 		PlayAttackMontage();
 		SetActionState(EActionState::EAS_Attacking);
 		StartTrail(EActionState::EAS_Attacking);
+
+
 	}
 
 }
@@ -174,6 +187,29 @@ void APlayerCharacter::Attack()
 void APlayerCharacter::AttackEnd()
 {
 	ActionState = EActionState::EAS_Unocuupied;
+	ComboAttackNum = 1;
+
+}
+
+void APlayerCharacter::ComboAble()
+{
+	bSaveAttack = true;
+}
+
+void APlayerCharacter::NextCombo()
+{
+	if (bComboAtteck)
+	{
+		PlayAttackMontage();
+		SetActionState(EActionState::EAS_Attacking);
+		StartTrail(EActionState::EAS_Attacking);
+		bComboAtteck = false;
+	}
+}
+
+void APlayerCharacter::ComboDisable()
+{
+	bSaveAttack = false;
 }
 
 bool APlayerCharacter::CanAttack()
@@ -224,9 +260,9 @@ void APlayerCharacter::DodgeEnd()
 
 void APlayerCharacter::Die()
 {
-	DisableMeshCollision();
 	Super::Die();
 	SetActionState(EActionState::EAS_Dead);
+	DisableMeshCollision();
 
 }
 
@@ -307,6 +343,34 @@ void APlayerCharacter::SprintEnd()
 	SetWalkSpeed(Walk);
 }
 
+int32 APlayerCharacter::PlayAttackMontage()
+{
+	FString PlaySection = "Attack" + FString::FromInt(ComboAttackNum);
+	
+	(ComboAttackNum < 3)
+		? ++ComboAttackNum
+		: ComboAttackNum = 1;
+
+	PlayMontageSection(FName(*PlaySection));
+
+	return ComboAttackNum;
+}
+
+EPhysicalSurface APlayerCharacter::GetSurfaceType()
+{
+	FHitResult HitResult;
+	const FVector Start = GetActorLocation();
+	const FVector End = Start + FVector(0.f, 0.f, -400.f);
+	FCollisionQueryParams QueryParams;
+	QueryParams.bReturnPhysicalMaterial = true;
+
+	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, 
+		ECollisionChannel::ECC_Visibility, QueryParams);
+
+	return UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
+
+}
+
 void APlayerCharacter::SetCameraComponent()
 {
 	CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraArm"));
@@ -328,6 +392,7 @@ void APlayerCharacter::Move(float Value, EAxis::Type axis)
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
 		const FVector Direction(FRotationMatrix(YawRotation).GetUnitAxis(axis));
 		AddMovementInput(Direction, Value);
+
 	}
 }
 
