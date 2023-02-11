@@ -31,6 +31,7 @@ public:
 	FORCEINLINE int32 GetMoney() const { return Money; }
 	FORCEINLINE int32 GetChips() const { return Chips; }
 	FORCEINLINE float GetDodgeCost() const { return DodgeCost; }
+	FORCEINLINE float GetAttackCost() const { return AttackCost; }
 	FORCEINLINE float GetStamina() const { return Stamina; }
 
 	FORCEINLINE float GetHealth() const { return Health; }
@@ -59,6 +60,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float SprintCost;
+
+	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
+	float AttackCost;
 
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float StaminaRegenRate;

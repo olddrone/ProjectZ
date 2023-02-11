@@ -122,8 +122,6 @@ private:
 
 	FTimerHandle AttackTimer;
 
-
-
 	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	float AttackMin;
 

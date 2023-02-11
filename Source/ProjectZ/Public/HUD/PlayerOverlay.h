@@ -8,7 +8,7 @@
 
 class UProgressBar;
 class UTextBlock;
-
+class UImage;
 /**
  * 
  */
@@ -20,8 +20,11 @@ class PROJECTZ_API UPlayerOverlay : public UUserWidget
 public:
 	void SetHealthBarPercent(float Percent);
 	void SetStaminaBarPercent(float Percent);
+	void SetMainWeapon(UTexture2D* Image);
 	void SetMoney(int32 Gold);
 	void SetChip(int32 Chip);
+
+	void ShowWeaponImage(ESlateVisibility bIsShow) const;
 
 private:
 	UPROPERTY(meta = (BindWidget))
@@ -29,6 +32,9 @@ private:
 
 	UPROPERTY(meta = (BindWidget))
 	UProgressBar* StaminaBar;
+
+	UPROPERTY(meta = (BindWidget))
+	UImage* MainWeapon;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* MoneyText;

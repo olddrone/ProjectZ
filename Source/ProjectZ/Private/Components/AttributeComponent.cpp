@@ -4,7 +4,7 @@
 
 UAttributeComponent::UAttributeComponent() : Health(100.f), MaxHealth(100.f),
 Money(0), Chips(0), Stamina(100.f), MaxStamina(100.f), 
-DodgeCost(14.f), StaminaRegenRate(8.f), SprintCost(10.f)
+DodgeCost(14.f), StaminaRegenRate(8.f), SprintCost(10.f), AttackCost(8.f)
 {
 	PrimaryComponentTick.bCanEverTick = false;
 

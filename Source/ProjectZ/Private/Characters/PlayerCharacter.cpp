@@ -17,8 +17,10 @@
 #include "Actors/PlayerTrail.h"
 #include "ProjectZ/ProjectZ.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
+#include "Engine/SkeletalMeshSocket.h"
 
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/GameplayStatics.h"
 #include "ProjectZ/DebugMacros.h"
 
 APlayerCharacter::APlayerCharacter() : bSprint(false)
@@ -61,7 +63,7 @@ void APlayerCharacter::BeginPlay()
 void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	GetSurfaceType();
 	
 	if (Attributes && PlayerOverlay)
 	{
@@ -101,8 +103,15 @@ void APlayerCharacter::InitializePlayerOverlay()
 				PlayerOverlay->SetHealthBarPercent(Attributes->GetHealthPercent());
 				PlayerOverlay->SetStaminaBarPercent(1.f);
 				PlayerOverlay->SetMoney(0);
-				PlayerOverlay->SetChip(0);
+				PlayerOverlay->SetChip(0);	
 			}
+			if (EquippedWeapon == nullptr)
+			{
+				PlayerOverlay->ShowWeaponImage(ESlateVisibility::Hidden);
+	
+
+			}
+
 		}
 	}
 }
@@ -132,7 +141,6 @@ void APlayerCharacter::EKeyPressed()
 	AWeapon* OverlappingWeapon = Cast<AWeapon>(OverlappingItem);
 	if (OverlappingWeapon)
 	{
-
 		if (EquippedWeapon)
 		{
 			EquippedWeapon->Destroy();
@@ -141,14 +149,10 @@ void APlayerCharacter::EKeyPressed()
 	}
 	else
 	{
-		if (CanDisarm())
-		{
-			Disarm();
-		}
-		else if (CanArm())
-		{
-			Arm();
-		}
+		if (GetCharacterMovement()->IsFalling())
+			return;
+
+		EquipWeapon();
 	}
 }
 
@@ -158,11 +162,16 @@ void APlayerCharacter::EquipWeapon(AWeapon* Weapon)
 	CharacterState = ECharacterState::ECS_OneHandedWeapon;
 	OverlappingItem = nullptr;
 	EquippedWeapon = Weapon;
+	InitWeaponHud(EquippedWeapon->GetItemIcon());
+	ShowWeaponHud(ESlateVisibility::Visible);
 }
 
 // 코드 중복, 수정 필요
 void APlayerCharacter::Attack()
 {
+	if (!HasEnoughStamina(Attributes->GetDodgeCost()))
+		return;
+
 	if (GetActionState() == EActionState::EAS_Sprint)
 		SprintEnd();
 	
@@ -178,10 +187,18 @@ void APlayerCharacter::Attack()
 		PlayAttackMontage();
 		SetActionState(EActionState::EAS_Attacking);
 		StartTrail(EActionState::EAS_Attacking);
-
-
+		UseAttackStamina();
 	}
+	
+}
 
+void APlayerCharacter::UseAttackStamina()
+{
+	if (Attributes && PlayerOverlay)
+	{
+		Attributes->UseStamina(Attributes->GetAttackCost());
+		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
+	}
 }
 
 void APlayerCharacter::AttackEnd()
@@ -204,6 +221,7 @@ void APlayerCharacter::NextCombo()
 		SetActionState(EActionState::EAS_Attacking);
 		StartTrail(EActionState::EAS_Attacking);
 		bComboAtteck = false;
+		UseAttackStamina();
 	}
 }
 
@@ -220,10 +238,11 @@ bool APlayerCharacter::CanAttack()
 
 void APlayerCharacter::Dodge()
 {
-	if (IsOccupied() || !HasEnoughStamina())
+	if (IsOccupied() || !HasEnoughStamina(Attributes->GetDodgeCost()))
 		return;
 
-	SetActorRotation(GetLastMovementInputVector().Rotation().Quaternion());
+	if (UKismetMathLibrary::VSizeXY(GetCharacterMovement()->Velocity) > 0.f)
+		SetActorRotation(GetLastMovementInputVector().Rotation().Quaternion());
 
 	PlayDodgeMontage();
 	DisableMeshCollision();
@@ -237,9 +256,9 @@ void APlayerCharacter::Dodge()
 	}
 }
 
-bool APlayerCharacter::HasEnoughStamina()
+bool APlayerCharacter::HasEnoughStamina(float Cost)
 {
-	return Attributes && Attributes->GetStamina() > Attributes->GetDodgeCost();
+	return Attributes && Attributes->GetStamina() >Cost;
 }
 
 bool APlayerCharacter::IsOccupied()
@@ -284,6 +303,7 @@ void APlayerCharacter::Disarm()
 	PlayEquipMontage(FName("Unequip"));
 	CharacterState = ECharacterState::ECS_Unequipped;
 	ActionState = EActionState::EAS_EquippingWeapon;
+	ShowWeaponHud(ESlateVisibility::Hidden);
 }
 
 void APlayerCharacter::Arm()
@@ -291,6 +311,7 @@ void APlayerCharacter::Arm()
 	PlayEquipMontage(FName("Equip"));
 	CharacterState = ECharacterState::ECS_OneHandedWeapon;
 	ActionState = EActionState::EAS_EquippingWeapon;
+	ShowWeaponHud(ESlateVisibility::Visible);
 }
 
 void APlayerCharacter::PlayEquipMontage(const FName& SectionName)
@@ -359,14 +380,16 @@ int32 APlayerCharacter::PlayAttackMontage()
 EPhysicalSurface APlayerCharacter::GetSurfaceType()
 {
 	FHitResult HitResult;
-	const FVector Start = GetActorLocation();
+	const USkeletalMeshSocket* RootSocket = GetMesh()->GetSocketByName(FName("StepSocket"));
+	const FTransform SocketTransform = RootSocket->GetSocketTransform(GetMesh());
+	const FVector Start = SocketTransform.GetLocation();
 	const FVector End = Start + FVector(0.f, 0.f, -400.f);
 	FCollisionQueryParams QueryParams;
 	QueryParams.bReturnPhysicalMaterial = true;
 
 	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, 
 		ECollisionChannel::ECC_Visibility, QueryParams);
-
+	
 	return UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
 
 }
@@ -413,6 +436,10 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &APlayerCharacter::SprintStart);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &APlayerCharacter::SprintEnd);
+
+
+	PlayerInputComponent->BindAction("Inventory", IE_Pressed, this, &APlayerCharacter::Inventory);
+	PlayerInputComponent->BindAction("LockOn", IE_Pressed, this, &APlayerCharacter::LockOn);
 }
 
 void APlayerCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
@@ -473,6 +500,36 @@ void APlayerCharacter::AddMoney(AMoney* Money)
 	}
 }
 
+bool APlayerCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult)
+{
+	FVector2D ViewportSize;
+	if (GEngine && GEngine->GameViewport)
+	{
+		GEngine->GameViewport->GetViewportSize(ViewportSize);
+	}
+
+	FVector2D CrosshairLocation = FVector2D(ViewportSize.X / 2.f, ViewportSize.Y / 2.f);
+	FVector CrosshairWorldPosition;
+	FVector CrosshairWorldDirection;
+
+	bool bScreenToWorld = UGameplayStatics::DeprojectScreenToWorld(
+		UGameplayStatics::GetPlayerController(this, 0),
+		CrosshairLocation, CrosshairWorldPosition, CrosshairWorldDirection);
+
+	if (bScreenToWorld)
+	{
+		const FVector Start = FVector(CrosshairWorldPosition);
+		const FVector End = FVector(Start + CrosshairWorldDirection* 50'000.f);
+		GetWorld()->LineTraceSingleByChannel(OutHitResult, Start, End, 
+			ECollisionChannel::ECC_Visibility);
+
+		if (OutHitResult.bBlockingHit)
+			return true;
+	}
+
+	return false;
+}
+
 void APlayerCharacter::SetHUDHealth()
 {
 	if (PlayerOverlay && Attributes)
@@ -483,7 +540,7 @@ void APlayerCharacter::SetHUDHealth()
 
 bool APlayerCharacter::Sprintable()
 {
-	return HasEnoughStamina() &&
+	return HasEnoughStamina(Attributes->GetDodgeCost()) &&
 		UKismetMathLibrary::VSizeXY(GetCharacterMovement()->Velocity) > 0.f;
 }
 
@@ -497,6 +554,41 @@ void APlayerCharacter::Sprint()
 	SetActionState(EActionState::EAS_Sprint);
 	//StartTrail(EActionState::EAS_Sprint);
 	SetWalkSpeed(Run);
+}
+
+void APlayerCharacter::EquipWeapon()
+{
+	if (CanDisarm())
+	{
+		Disarm();
+	}
+	else if (CanArm())
+	{
+		Arm();
+	}
+}
+
+void APlayerCharacter::Inventory()
+{
+	PRINT_TEXT("Pressed I Key");
+}
+
+void APlayerCharacter::LockOn()
+{
+	PRINT_TEXT("Pressed Middle Mouse Key");
+}
+
+
+void APlayerCharacter::InitWeaponHud(UTexture2D* Image)
+{
+	if (PlayerOverlay)
+		PlayerOverlay->SetMainWeapon(Image);
+}
+
+void APlayerCharacter::ShowWeaponHud(ESlateVisibility bIsShow)
+{
+	if (PlayerOverlay)
+		PlayerOverlay->ShowWeaponImage(bIsShow);
 }
 
 void APlayerCharacter::StartTrail(EActionState Action)

@@ -122,6 +122,7 @@ void AWeapon::BoxTrace(FHitResult& BoxHit)
 		bShowBoxDebug ? EDrawDebugTrace::ForDuration : EDrawDebugTrace::None, BoxHit, true);
 
 	IgnoreActors.AddUnique(BoxHit.GetActor());
+
 }
 
 void AWeapon::ExecuteGetHit(FHitResult& BoxHit)

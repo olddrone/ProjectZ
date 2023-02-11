@@ -9,11 +9,12 @@
 class USphereComponent;
 class UNiagaraComponent;
 class UNiagaraSystem;
+class UTexture2D;
 
 enum class EItemState : uint8
 {
-	EIS_Hovering				UMETA(DisplayName = ""),
-	EIS_Equipped				UMETA(DisplayName = "")
+	EIS_Hovering				UMETA(DisplayName = "Hovering"),
+	EIS_Equipped				UMETA(DisplayName = "Equipped")
 };
 
 UCLASS()
@@ -28,6 +29,7 @@ public:
 	FORCEINLINE UStaticMeshComponent* GetItemMesh() const { return ItemMesh; }
 	FORCEINLINE void SetItemState(EItemState State) { ItemState = State; }
 	FORCEINLINE USphereComponent* GetSphere() const { return Sphere; }
+	FORCEINLINE UTexture2D* GetItemIcon() const { return ItemIcon; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -76,11 +78,14 @@ private:
 
 	EItemState ItemState = EItemState::EIS_Hovering;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Effect")
 	UNiagaraSystem* PickupEffect;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Effect")
 	USoundBase* PickupSound;
+
+	UPROPERTY(EditAnywhere, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
+	UTexture2D* ItemIcon;
 };
 
 template<typename T>

@@ -35,6 +35,8 @@ public:
 	virtual void AddMoney(AMoney* Money) override;
 
 
+	bool TraceUnderCrosshairs(FHitResult& OutHitResult);
+
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 	FORCEINLINE void SetActionState(EActionState Actions) { ActionState = Actions; }
 	FORCEINLINE EActionState GetActionState() const { return ActionState; }
@@ -52,6 +54,7 @@ protected:
 	void EquipWeapon(AWeapon* Weapon);
 
 	virtual void Attack() override;
+	void UseAttackStamina();
 	virtual void AttackEnd() override;
 	
 	virtual void ComboAble() override;
@@ -61,7 +64,7 @@ protected:
 	virtual bool CanAttack() override;
 	
 	void Dodge();
-	bool HasEnoughStamina();
+	bool HasEnoughStamina(float Cost);
 	bool IsOccupied();
 	virtual void DodgeEnd() override;
 
@@ -104,11 +107,15 @@ private:
 	}
 	
 	bool Sprintable();
-
 	void SetWalkSpeed(float WalkSpeed);
-
 	void Sprint();
+	void EquipWeapon();
 
+	void Inventory();
+	void LockOn();
+
+	void InitWeaponHud(UTexture2D* Image);
+	void ShowWeaponHud(ESlateVisibility bIsShow);
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Camera", meta = (AllowPrivateAccess = "true"))

@@ -4,6 +4,7 @@
 #include "HUD/PlayerOverlay.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "Components/Image.h"
 
 void UPlayerOverlay::SetHealthBarPercent(float Percent)
 {
@@ -18,6 +19,14 @@ void UPlayerOverlay::SetStaminaBarPercent(float Percent)
 	if (StaminaBar)
 	{
 		StaminaBar->SetPercent(Percent);
+	}
+}
+
+void UPlayerOverlay::SetMainWeapon(UTexture2D* Image)
+{
+	if (MainWeapon)
+	{
+		MainWeapon->SetBrushFromTexture(Image);
 	}
 }
 
@@ -39,5 +48,13 @@ void UPlayerOverlay::SetChip(int32 Chip)
 		const FText ToText = FText::FromString(ChipString);
 		ChipText->SetText(ToText);
 	
+	}
+}
+
+void UPlayerOverlay::ShowWeaponImage(ESlateVisibility bIsShow) const
+{
+	if (MainWeapon)
+	{
+		MainWeapon->SetVisibility(bIsShow);
 	}
 }
