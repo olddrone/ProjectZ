@@ -36,5 +36,5 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	UBoxComponent* Box;
 
-	bool bBroken = false;
+	bool bBroken;
 };

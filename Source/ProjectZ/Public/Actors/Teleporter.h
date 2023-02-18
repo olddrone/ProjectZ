@@ -10,6 +10,7 @@ class USphereComponent;
 class UCapsuleComponent;
 class UNiagaraComponent;
 class UWidgetComponent;
+class UWidgetAnimation;
 
 UCLASS()
 class PROJECTZ_API ATeleporter : public AActor
@@ -22,6 +23,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FString GetMapName() const { return MapName; }
 
+	void OpenMap();
+
 protected:
 	virtual void BeginPlay() override;
 	
@@ -30,37 +33,32 @@ protected:
 			AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 			bool bFromSweep, const FHitResult& SweepResult);
 
-	// 추후 접촉 시 UI로 맵 이동 확인 
-	/*UFUNCTION()
-	virtual void OnAreaEndOverlap(UPrimitiveComponent* OverlappedComponent,
-			AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);*/
-
 	UFUNCTION()
-	virtual void OnAreaOverlap(UPrimitiveComponent* OverlappedComponent,
-			AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-			bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	virtual void OnAreaEndOverlap(UPrimitiveComponent* OverlappedComponent,
-		AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	virtual void OnCapsuleEndOverlap(UPrimitiveComponent* OverlappedComponent,
+			AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 
+	// PROPERTY 지정자 중 BlueprintNativeEvent를 활용하여 코드로 수정
 private:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	FString MapName;
 
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
-	UStaticMeshComponent* TeleporterMesh;
+	UStaticMeshComponent* TeleportMesh;
+
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
+	UStaticMeshComponent* AreaMesh;
 
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
 	USphereComponent* WidgetArea;
 
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
-	UCapsuleComponent* TeleporterCapsule;
+	UCapsuleComponent* TeleportArea;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	UNiagaraComponent* TeleporterEffect;
+	UNiagaraComponent* TeleportEffect;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	UWidgetComponent* Widget;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	UWidgetComponent* InfomationWidget;
+
 };

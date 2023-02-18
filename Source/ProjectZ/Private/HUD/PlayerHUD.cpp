@@ -2,6 +2,7 @@
 
 #include "HUD/PlayerHUD.h"
 #include "HUD/PlayerOverlay.h"
+#include "HUD/TranferWidget.h"
 
 void APlayerHUD::BeginPlay()
 {
@@ -16,7 +17,14 @@ void APlayerHUD::BeginPlay()
 			PlayerOverlay = CreateWidget<UPlayerOverlay>(Controller, PlayerOverlayClass);
 			PlayerOverlay->AddToViewport();
 		}
+
+		if (Controller && TransferWidgetClass)
+		{
+			TransferWidget = CreateWidget<UTranferWidget>(Controller, TransferWidgetClass);
+			TransferWidget->AddToViewport();
+			TransferWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
 	}
 
-	
+
 }

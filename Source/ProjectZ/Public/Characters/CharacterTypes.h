@@ -18,7 +18,8 @@ enum class EActionState : uint8
 	EAS_EquippingWeapon				UMETA(DisplayName = "EquippingWeapon"),
 	EAS_Dodge						UMETA(DisplayName = "Dodge"),
 	EAS_Sprint						UMETA(DisplayName = "Sprint"),
-	EAS_Dead						UMETA(DisplayName = "Dead")
+	EAS_Dead						UMETA(DisplayName = "Dead"),
+	EAS_UI							UMETA(DisplayName = "UI")
 };
 
 UENUM(BlueprintType)
@@ -39,4 +40,16 @@ enum class EEnemyState : uint8
 	EES_Attacking					UMETA(DisplayName = "Attacking"),
 	EES_Engaged						UMETA(DisplayName = "Engaged")
 	
+};
+
+namespace WalkSpeed
+{
+	const float Walk = 450.f;
+	const float Run = 720.f;
+};
+
+namespace TimerRate
+{
+	const float AutomaticTrailRate = 0.05f;
+	const float SprintRate = 0.025f;
 };

@@ -7,7 +7,8 @@
 #include "PlayerHUD.generated.h"
 
 class UPlayerOverlay;
-
+class UUserWidget;
+class UTranferWidget;
 /**
  * 
  */
@@ -20,6 +21,7 @@ public:
 	virtual void BeginPlay() override;
 
 	FORCEINLINE UPlayerOverlay* GetPlayerOverlay() { return PlayerOverlay; }
+	FORCEINLINE UTranferWidget* GetTransferWidget() { return TransferWidget; }
 
 private:
 	UPROPERTY(EditDefaultsOnly, Category = "Player")
@@ -27,4 +29,10 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Player")
 	UPlayerOverlay* PlayerOverlay;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Widget")
+	TSubclassOf<UTranferWidget> TransferWidgetClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Widget")
+	UTranferWidget* TransferWidget;
 };

@@ -5,7 +5,7 @@
 #include "Items/Money.h"
 #include "Components/BoxComponent.h"
 
-ABreakableActor::ABreakableActor()
+ABreakableActor::ABreakableActor() : bBroken(false)
 {
 	PrimaryActorTick.bCanEverTick = false;
 

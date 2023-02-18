@@ -35,6 +35,8 @@ void AChip::BeginPlay()
 		false, ActorsToIgnore, EDrawDebugTrace::None, HitResult, true);
 
 	DesiredZ = HitResult.ImpactPoint.Z + 50.f;
+	DriftRate = -15.f;
+
 }
 
 void AChip::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,

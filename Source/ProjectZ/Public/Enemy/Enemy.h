@@ -14,6 +14,7 @@ class AAIController;
 class UPawnSensingComponent;
 class AWeapon;
 class AChip;
+class UUserWidget;
 
 UCLASS()
 class PROJECTZ_API AEnemy : public ABaseCharacter
@@ -28,7 +29,8 @@ public:
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent,
 		class AController* EventInstigator, AActor* DamageCauser) override;
 
-
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowHitDamage(int32 Damage, FVector HitLocation);
 
 protected:
 	virtual void BeginPlay() override;
@@ -39,6 +41,14 @@ protected:
 	virtual bool CanAttack() override;
 	virtual void HandleDamage(float DamageAmount) override;
 	virtual void AttackEnd() override;
+
+	UFUNCTION(BlueprintCallable)
+	void StoreHitDamage(UUserWidget* HitDamage, FVector Location);
+
+	UFUNCTION()
+	void DestroyHitDamage(UUserWidget* HitDamage);
+
+	void UpdateHitDamages();
 
 private:
 	void InitializeEnemy();
@@ -109,7 +119,7 @@ private:
 	UPawnSensingComponent* PawnSensing;
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	EEnemyState EnemyState = EEnemyState::EES_Patrolling;
+	EEnemyState EnemyState;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<AWeapon> WeaponClass;
@@ -128,7 +138,12 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	float AttackMax;
 
-	
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	TSubclassOf<AChip> ChipClass;
+
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
+	TMap<UUserWidget*, FVector> HitDamages;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	float HitDamageDestroyTime;
 };

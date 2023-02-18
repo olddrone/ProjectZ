@@ -8,29 +8,33 @@
 #include "Characters/PlayerCharacter.h"
 #include "Components/WidgetComponent.h"
 #include "Components/SphereComponent.h"
+#include "ProjectZ/DebugMacros.h"
 
 ATeleporter::ATeleporter() : MapName(TEXT("Defaults"))
 {
  	PrimaryActorTick.bCanEverTick = true;
 
-	TeleporterMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TeleporterMesh"));
-	TeleporterMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-	TeleporterMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	SetRootComponent(TeleporterMesh);
+	TeleportMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("TeleportMesh"));
+	TeleportMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	TeleportMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SetRootComponent(TeleportMesh);
 
-	TeleporterCapsule = CreateDefaultSubobject<UCapsuleComponent>(TEXT("TeleporterCapsule"));
-	TeleporterCapsule->SetupAttachment(GetRootComponent());
-
-	TeleporterEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("TeleporterEffect"));
-	TeleporterEffect->SetupAttachment(GetRootComponent());
+	AreaMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("AreaMesh"));
+	AreaMesh->SetupAttachment(GetRootComponent());
 
 	WidgetArea = CreateDefaultSubobject<USphereComponent>(TEXT("WidgetArea"));
 	WidgetArea->SetupAttachment(GetRootComponent());
 
-	Widget = CreateDefaultSubobject<UWidgetComponent>(TEXT("Widget"));
-	Widget->SetupAttachment(GetRootComponent());
-	Widget->SetWidgetSpace(EWidgetSpace::Screen);
- 	Widget->SetDrawSize(FVector2D(200, 50));
+	TeleportArea = CreateDefaultSubobject<UCapsuleComponent>(TEXT("TeleportArea"));
+	TeleportArea->SetupAttachment(GetRootComponent());
+
+	TeleportEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("TeleportEffect"));
+	TeleportEffect->SetupAttachment(GetRootComponent());
+
+	InfomationWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("InfomationWidget"));
+	InfomationWidget->SetupAttachment(GetRootComponent());
+	InfomationWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	InfomationWidget->SetDrawSize(FVector2D(300, 300));
 
 }
 
@@ -38,12 +42,10 @@ void ATeleporter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	TeleporterCapsule->OnComponentBeginOverlap.AddDynamic(this, &ATeleporter::OnCapsuleOverlap);
+	TeleportArea->OnComponentBeginOverlap.AddDynamic(this, &ATeleporter::OnCapsuleOverlap);
+	TeleportArea->OnComponentEndOverlap.AddDynamic(this, &ATeleporter::OnCapsuleEndOverlap);
 	
-	WidgetArea->OnComponentBeginOverlap.AddDynamic(this, &ATeleporter::OnAreaOverlap);
-	WidgetArea->OnComponentEndOverlap.AddDynamic(this, &ATeleporter::OnAreaEndOverlap);
-
-	Widget->SetVisibility(false);
+	InfomationWidget->SetVisibility(false);
 }
 
 void ATeleporter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -52,19 +54,29 @@ void ATeleporter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 	APlayerCharacter* Character = Cast<APlayerCharacter>(OtherActor);
 	if (Character)
 	{
-		UGameplayStatics::OpenLevel(GetWorld(), FName(MapName));
+		Character->SetActorLocation(GetActorLocation());
+		Character->StopMovement(); 
+		Character->InitMapName(MapName);
+		Character->SetOverlappingTeleport(this);
+		Character->DisplayWidget();
+
 	}
 }
 
-void ATeleporter::OnAreaOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
-{
-	Widget->SetVisibility(true);
-}
-
-void ATeleporter::OnAreaEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+void ATeleporter::OnCapsuleEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	Widget->SetVisibility(false);
+	APlayerCharacter* Character = Cast<APlayerCharacter>(OtherActor);
+	if (Character)
+	{
+
+		Character->InitMapName(FString("Defaults"));
+		Character->SetOverlappingTeleport(nullptr);
+	}
+}
+
+void ATeleporter::OpenMap()
+{
+	UGameplayStatics::OpenLevel(GetWorld(), FName(MapName));
 }
 

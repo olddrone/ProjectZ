@@ -16,6 +16,10 @@ class AChip;
 class AMoney;
 class UAnimMontage;
 class UPlayerOverlay;
+class UTranferWidget;
+class ATeleporter;
+class APlayerController;
+class UNiagaraComponent;
 
 UCLASS()
 class PROJECTZ_API APlayerCharacter : public ABaseCharacter, public IPickupInterface
@@ -34,12 +38,33 @@ public:
 	virtual void AddChips(AChip* Chip) override;
 	virtual void AddMoney(AMoney* Money) override;
 
-
 	bool TraceUnderCrosshairs(FHitResult& OutHitResult);
+
+	void InitMapName(FString Name);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void DisplayOverlay();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void DisplayWidget();
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void RemoveWidget();
+
+	UFUNCTION(BlueprintCallable)
+	void Teleport();
+
+	UFUNCTION(BlueprintCallable)
+	void MoveToCharacter();
+
+	void SetOverlappingTeleport(ATeleporter* Teleporter);
 
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 	FORCEINLINE void SetActionState(EActionState Actions) { ActionState = Actions; }
 	FORCEINLINE EActionState GetActionState() const { return ActionState; }
+	FORCEINLINE UTranferWidget* GetTransferWidget() const { return TransferWidget; }
+	
+	void StopMovement();
 	
 protected:
 	virtual void BeginPlay() override;
@@ -96,6 +121,8 @@ protected:
 
 private:
 	void SetCameraComponent();
+	void SetMeshCollision();
+
 	void Move(float Value, EAxis::Type axis);
 	void InitializePlayerOverlay();
 	void SetHUDHealth();
@@ -117,58 +144,75 @@ private:
 	void InitWeaponHud(UTexture2D* Image);
 	void ShowWeaponHud(ESlateVisibility bIsShow);
 
-private:
-	UPROPERTY(VisibleAnywhere, Category = "Camera", meta = (AllowPrivateAccess = "true"))
-	USpringArmComponent* CameraArm;
-	UPROPERTY(VisibleAnywhere, Category = "Camera", meta = (AllowPrivateAccess = "true"))
-	UCameraComponent* CameraComponent;
-	
-	UPROPERTY(VisibleAnywhere, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
-	AItem* OverlappingItem;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Montage", meta = (AllowPrivateAccess = "true"))
-	UAnimMontage* EquipMontage;
+	void SetPlayerInputMode(bool bInputMode);
 
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
-	
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
-	EActionState ActionState = EActionState::EAS_Unocuupied;
-
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	UPlayerOverlay* PlayerOverlay;
-
-protected:
 	void StartTrail(EActionState Action);
+
 	UFUNCTION()
 	void TrailTimerReset(EActionState Action);
 
 	void MakeTrail();
+	void SprintTrail();
 
 private:
-	FTimerHandle TrailTimerHandle;
-	float AutomaticTrailRate = 0.05f;
+	UPROPERTY(VisibleAnywhere, Category = "Camera", meta = (AllowPrivateAccess = "true"))
+	USpringArmComponent*	SpringArm;
+
+	UPROPERTY(VisibleAnywhere, Category = "Camera", meta = (AllowPrivateAccess = "true"))
+	UCameraComponent*		Camera;
+
+	UPROPERTY(VisibleAnywhere, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
+	AItem*					OverlappingItem;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Montage", meta = (AllowPrivateAccess = "true"))
+	UAnimMontage*			EquipMontage;
+
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	ECharacterState			CharacterState;
+	
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
+	EActionState			ActionState;
+
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	UPlayerOverlay*			PlayerOverlay;
+
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	UTranferWidget*			TransferWidget;
+
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
+	ATeleporter*			OverlappingTeleporter;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning")
-	TSubclassOf<AActor> ActorToSpawn;
+	TSubclassOf<AActor>		ActorToSpawn;
 
-	UPROPERTY(EditAnywhere, Category = "Movement")
-	float Walk = 450.f;
+	UPROPERTY(VisibleAnywhere)
+	APlayerController*		PlayerController;
 
-	UPROPERTY(EditAnywhere, Category = "Movement")
-	float Run = 720.f;
+	bool					bSprint;
+	bool					bTrail;
+	int32					ComboAttackNum;
+	bool					bSaveAttack;
+	bool					bComboAtteck;
+	bool					bMove;
 
-	//UPROPERTY(EditDefaultsOnly, Category = "Spawning")
-	bool bSprint;
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	UNiagaraComponent*		DeathEffect;
+	UPROPERTY(VisibleAnywhere)
+	UTimelineComponent* DissolveTimeline;
+	FOnTimelineFloat DissolveTrack;
 
-	FTimerHandle Timer;
-	float Rate = 0.025f;
-	void StartTimer();
-	void TEST();
-	bool Check = true;
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	UCurveFloat* DissolveCurve;
+	
+	UFUNCTION()
+	void UpdateDissolveMaterial(float DissolveValue);
 
-	int32 ComboAttackNum = 1;
+	void StartDissolve();
 
-	bool bSaveAttack = false;
-	bool bComboAtteck = false;
+	UPROPERTY(EditAnywhere)
+	TArray<UMaterialInstanceDynamic*> DynamicDissolveMaterialInstances;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	TArray<UMaterialInstance*> DissolveMaterialInstances;
+
 };

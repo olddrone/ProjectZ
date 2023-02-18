@@ -12,6 +12,7 @@
 #include "Animation/AnimMontage.h"
 #include "HUD/PlayerHUD.h"
 #include "HUD/PlayerOverlay.h"
+#include "HUD/TranferWidget.h"
 #include "Items/Chip.h"
 #include "Items/Money.h"
 #include "Actors/PlayerTrail.h"
@@ -22,12 +23,21 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "ProjectZ/DebugMacros.h"
+#include "GameFramework/PlayerController.h"
+#include "Actors/Teleporter.h"
+#include "NiagaraComponent.h"
+#include "Components/TimelineComponent.h"
 
-APlayerCharacter::APlayerCharacter() : bSprint(false)
+APlayerCharacter::APlayerCharacter() : bSprint(false), 
+	CharacterState(ECharacterState::ECS_Unequipped),
+	ActionState(EActionState::EAS_Unocuupied), 
+	bTrail(true), ComboAttackNum(1), bSaveAttack(false),
+	bComboAtteck (false), bMove(true)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
 	SetCameraComponent();
+	SetMeshCollision();
 
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
@@ -35,20 +45,20 @@ APlayerCharacter::APlayerCharacter() : bSprint(false)
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 720.f, 0.f);
-	SetWalkSpeed(Walk);
+	
+	SetWalkSpeed(WalkSpeed::Walk);
 
 
-	GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
-	GetMesh()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	DeathEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("DeathEffect"));
+	DeathEffect->SetupAttachment(GetRootComponent());
 
-	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera,
-		ECollisionResponse::ECR_Ignore);
-	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility,
-		ECollisionResponse::ECR_Block);
-	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic,
-		ECollisionResponse::ECR_Overlap);
-	GetMesh()->SetGenerateOverlapEvents(true);
+	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimeline"));
 
+}
+
+void APlayerCharacter::StopMovement()
+{
+	GetCharacterMovement()->Velocity = FVector::ZeroVector;
 }
 
 void APlayerCharacter::BeginPlay()
@@ -57,6 +67,7 @@ void APlayerCharacter::BeginPlay()
 
 	Tags.Add(FName("EngageableTarget"));
 	InitializePlayerOverlay();
+	DeathEffect->Deactivate();
 
 }
 
@@ -65,6 +76,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	GetSurfaceType();
 	
+
 	if (Attributes && PlayerOverlay)
 	{
 		if (bSprint)
@@ -73,8 +85,8 @@ void APlayerCharacter::Tick(float DeltaTime)
 			{
 				Attributes->UseTickStamina(DeltaTime);
 				Sprint();
-				if (Check)
-					StartTimer();
+				if (bTrail)
+					SprintTrail();
 				
 			}
 			else
@@ -91,7 +103,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 
 void APlayerCharacter::InitializePlayerOverlay()
 {
-	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	PlayerController = Cast<APlayerController>(GetController());
 	if (PlayerController)
 	{
 		APlayerHUD* PlayerHUD = Cast<APlayerHUD>(PlayerController->GetHUD());
@@ -108,10 +120,8 @@ void APlayerCharacter::InitializePlayerOverlay()
 			if (EquippedWeapon == nullptr)
 			{
 				PlayerOverlay->ShowWeaponImage(ESlateVisibility::Hidden);
-	
-
 			}
-
+			DisplayOverlay();
 		}
 	}
 }
@@ -169,15 +179,18 @@ void APlayerCharacter::EquipWeapon(AWeapon* Weapon)
 // 코드 중복, 수정 필요
 void APlayerCharacter::Attack()
 {
-	if (!HasEnoughStamina(Attributes->GetDodgeCost()))
+	const float MinCost = Attributes->GetMinCost();
+	const bool IsSprinting = GetActionState() == EActionState::EAS_Sprint;
+
+	if (!HasEnoughStamina(MinCost))
 		return;
 
-	if (GetActionState() == EActionState::EAS_Sprint)
+	if (IsSprinting)
 		SprintEnd();
 	
 	Super::Attack();
 	
-	if (bSaveAttack && ActionState != EActionState::EAS_Dead)
+	if (bSaveAttack)
 	{
 		bComboAtteck = true;
 	}
@@ -283,6 +296,16 @@ void APlayerCharacter::Die()
 	SetActionState(EActionState::EAS_Dead);
 	DisableMeshCollision();
 
+	for (int i = 0; i < DynamicDissolveMaterialInstances.Num(); ++i)
+	{
+		DynamicDissolveMaterialInstances[i] = UMaterialInstanceDynamic::Create(DissolveMaterialInstances[i], this);
+		GetMesh()->SetMaterial(i, DynamicDissolveMaterialInstances[i]);
+		DynamicDissolveMaterialInstances[i]->SetScalarParameterValue(TEXT("Dissolve"), 1.f);
+		DynamicDissolveMaterialInstances[i]->SetScalarParameterValue(TEXT("Glow"), 50.f);
+	}
+	
+	StartDissolve();
+	DeathEffect->Activate();
 }
 
 bool APlayerCharacter::CanDisarm()
@@ -361,7 +384,9 @@ void APlayerCharacter::SprintEnd()
 {
 	bSprint = false;
 	SetActionState(EActionState::EAS_Unocuupied);
-	SetWalkSpeed(Walk);
+
+	SetWalkSpeed(WalkSpeed::Walk);
+
 }
 
 int32 APlayerCharacter::PlayAttackMontage()
@@ -396,20 +421,37 @@ EPhysicalSurface APlayerCharacter::GetSurfaceType()
 
 void APlayerCharacter::SetCameraComponent()
 {
-	CameraArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraArm"));
-	CameraArm->SetupAttachment(GetRootComponent());
-	CameraArm->TargetArmLength = 300.f;
-	CameraArm->bUsePawnControlRotation = true;
+	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+	SpringArm->SetupAttachment(GetRootComponent());
+	SpringArm->TargetArmLength = 300.f;
+	SpringArm->bUsePawnControlRotation = true;
 
-	CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
-	CameraComponent->SetupAttachment(CameraArm, USpringArmComponent::SocketName);
-	CameraComponent->bUsePawnControlRotation = false;
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName);
+	Camera->bUsePawnControlRotation = false;
+}
+
+void APlayerCharacter::SetMeshCollision()
+{
+	GetMesh()->SetCollisionObjectType(ECollisionChannel::ECC_WorldDynamic);
+	GetMesh()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera,
+		ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility,
+		ECollisionResponse::ECR_Block);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldDynamic,
+		ECollisionResponse::ECR_Overlap);
+	GetMesh()->SetGenerateOverlapEvents(true);
 }
 
 void APlayerCharacter::Move(float Value, EAxis::Type axis)
 {
+	if (!bMove)
+		return;
 	if (IsOccupied())
 		return;
+
 	if (Controller && Value != 0.f)
 	{
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
@@ -530,6 +572,60 @@ bool APlayerCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult)
 	return false;
 }
 
+void APlayerCharacter::InitMapName(FString Name)
+{
+	if (PlayerController)
+	{
+		APlayerHUD* PlayerHUD = Cast<APlayerHUD>(PlayerController->GetHUD());
+		if (PlayerHUD)
+		{
+			TransferWidget = PlayerHUD->GetTransferWidget();
+			if (PlayerOverlay)
+			{
+				TransferWidget->SetMapName(Name);
+			}
+		}
+	}
+}
+
+void APlayerCharacter::DisplayOverlay_Implementation()
+{
+}
+
+void APlayerCharacter::Teleport()
+{
+	SetPlayerInputMode(false);
+	OverlappingTeleporter->OpenMap();
+
+}
+
+void APlayerCharacter::MoveToCharacter()
+{
+	SetActorLocation(GetActorLocation() + (-GetActorForwardVector() * 200.f));
+}
+
+void APlayerCharacter::SetOverlappingTeleport(ATeleporter* Teleporter)
+{
+	OverlappingTeleporter = Teleporter;
+
+}
+
+void APlayerCharacter::DisplayWidget_Implementation()
+{
+	bMove = false;
+	SetPlayerInputMode(true);
+	GetCharacterMovement()->Velocity = FVector(0.f);
+	TransferWidget->SetVisibility(ESlateVisibility::Visible);
+}
+
+void APlayerCharacter::RemoveWidget_Implementation()
+{
+	bMove = true;
+	SetPlayerInputMode(false);
+	
+	TransferWidget->SetVisibility(ESlateVisibility::Hidden);
+}
+
 void APlayerCharacter::SetHUDHealth()
 {
 	if (PlayerOverlay && Attributes)
@@ -552,8 +648,7 @@ void APlayerCharacter::SetWalkSpeed(float WalkSpeed)
 void APlayerCharacter::Sprint()
 {
 	SetActionState(EActionState::EAS_Sprint);
-	//StartTrail(EActionState::EAS_Sprint);
-	SetWalkSpeed(Run);
+	SetWalkSpeed(WalkSpeed::Run);
 }
 
 void APlayerCharacter::EquipWeapon()
@@ -591,15 +686,30 @@ void APlayerCharacter::ShowWeaponHud(ESlateVisibility bIsShow)
 		PlayerOverlay->ShowWeaponImage(bIsShow);
 }
 
+void APlayerCharacter::SetPlayerInputMode(bool bInputMode)
+{
+	FInputModeDataBase* InputMode = (bInputMode) 
+		? static_cast<FInputModeDataBase*>(new FInputModeUIOnly())
+		: static_cast<FInputModeDataBase*>(new FInputModeGameOnly());
+	
+	EActionState Action = (bInputMode)
+		? EActionState::EAS_UI : EActionState::EAS_Unocuupied;
+
+	PlayerController->SetInputMode(*InputMode);
+	PlayerController->bShowMouseCursor = bInputMode;
+	SetActionState(Action);
+}
+
 void APlayerCharacter::StartTrail(EActionState Action)
 {
 	MakeTrail();
 
 	if (ActionState == Action)
 	{
+		static FTimerHandle TrailTimerHandle;
 		FTimerDelegate TimerDel;
 		TimerDel.BindUFunction(this, FName(TEXT("TrailTimerReset")), Action);
-		GetWorldTimerManager().SetTimer(TrailTimerHandle, TimerDel, AutomaticTrailRate, false);
+		GetWorldTimerManager().SetTimer(TrailTimerHandle, TimerDel, TimerRate::AutomaticTrailRate, false);
 	}
 }
 
@@ -619,21 +729,40 @@ void APlayerCharacter::MakeTrail()
 	}
 }
 
-void APlayerCharacter::StartTimer()
+void APlayerCharacter::SprintTrail()
 {
-	Check = false;
-	GetWorldTimerManager().SetTimer(Timer, this, &APlayerCharacter::TEST, Rate, true);
+	static FTimerHandle SprintTimerHandle;
+	bTrail = false;
+	GetWorldTimerManager().SetTimer(SprintTimerHandle, [this]()
+		{
+			if (bTrail == false)
+			{
+				GetWorldTimerManager().ClearTimer(SprintTimerHandle);
+				SprintTrail();
+				bTrail = true;
+				MakeTrail();
+			}
+		}, TimerRate::SprintRate, true);
 }
 
-void APlayerCharacter::TEST()
+void APlayerCharacter::UpdateDissolveMaterial(float DissolveValue)
 {
-	if (Check == false)
+	for (int i = 0; i < DynamicDissolveMaterialInstances.Num(); ++i)
 	{
-		GetWorldTimerManager().ClearTimer(Timer);
-		StartTimer();
-		Check = true;
-		MakeTrail();
+		if (DynamicDissolveMaterialInstances[i])
+			DynamicDissolveMaterialInstances[i]->SetScalarParameterValue(TEXT("Dissolve"), DissolveValue);
 	}
+}
+
+void APlayerCharacter::StartDissolve()
+{
+	DissolveTrack.BindDynamic(this, &APlayerCharacter::UpdateDissolveMaterial);
+	if (DissolveCurve && DissolveTimeline)
+	{
+		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
+		DissolveTimeline->Play();
+	}
+	
 }
 
 void APlayerCharacter::TrailTimerReset(EActionState Action)

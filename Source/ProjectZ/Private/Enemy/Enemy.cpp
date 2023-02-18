@@ -10,10 +10,14 @@
 #include "Items/Weapons/Weapon.h"
 #include "Items/Chip.h"
 #include "Components/BoxComponent.h"
+#include "Blueprint/UserWidget.h"
+#include "Kismet/GameplayStatics.h"
+
 
 AEnemy::AEnemy() : CombatRadius(1000.f), AttackRadius(200.f), AcceptanceRadius(50.f),
 PatrolRadius(200.f), PatrolWaitMin(2.f), PatrolWaitMax(5.f), PatrollingSpeed(200.f), 
-ChasingSpeed(300.f), AttackMin(0.5f), AttackMax(1.f)
+ChasingSpeed(300.f), AttackMin(0.5f), AttackMax(1.f), HitDamageDestroyTime(1.f),
+EnemyState(EEnemyState::EES_Patrolling)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -76,6 +80,7 @@ void AEnemy::Tick(float DeltaTime)
 	{
 		CheckPatrolTarget();
 	}
+	UpdateHitDamages();
 }
 
 void AEnemy::CheckCombatTarget()
@@ -165,6 +170,9 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
 	HandleDamage(DamageAmount);
 	CombatTarget = EventInstigator->GetPawn();
 	
+	UE_LOG(LogTemp, Warning, TEXT("Hit Enemy[%f]"),DamageAmount);
+	ShowHitDamage(DamageAmount, GetActorLocation()+FVector(0.f,0.f,100.f));
+
 	if (IsInsideAttackRadius())
 	{
 		EnemyState = EEnemyState::EES_Attacking;
@@ -367,4 +375,37 @@ void AEnemy::AttackEnd()
 {
 	EnemyState = EEnemyState::EES_NoState;
 	CheckCombatTarget();
+}
+
+void AEnemy::StoreHitDamage(UUserWidget* HitDamage, FVector Location)
+{
+	HitDamages.Add(HitDamage, Location);
+
+	FTimerHandle HitDamageTimer;
+	FTimerDelegate HitDamageDelegate;
+	HitDamageDelegate.BindUFunction(this, FName("DestroyHitDamage"), HitDamage);
+	GetWorld()->GetTimerManager().SetTimer(
+		HitDamageTimer, HitDamageDelegate, 
+		HitDamageDestroyTime, false);
+}
+
+void AEnemy::DestroyHitDamage(UUserWidget* HitDamage)
+{
+	HitDamages.Remove(HitDamage);
+	HitDamage->RemoveFromParent();
+}
+
+void AEnemy::UpdateHitDamages()
+{
+	for (auto& HitPair : HitDamages)
+	{
+		UUserWidget* HitDamage = HitPair.Key;
+		const FVector Location = HitPair.Value;
+		FVector2D ScreenPosition;
+
+		UGameplayStatics::ProjectWorldToScreen(
+			GetWorld()->GetFirstPlayerController(), Location, ScreenPosition);
+
+		HitDamage->SetPositionInViewport(ScreenPosition);
+	}
 }

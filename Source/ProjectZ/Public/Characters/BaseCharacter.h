@@ -128,6 +128,6 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	double WarpTargetDistance;
 
-	FVector ToHit = FVector(0, 0, 0);
+	FVector ToHit;
 
 };

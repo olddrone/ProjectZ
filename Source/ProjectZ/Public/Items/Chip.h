@@ -34,5 +34,5 @@ private:
 	double DesiredZ;
 
 	UPROPERTY(EditAnywhere)
-	float DriftRate = -15.f;
+	float DriftRate;
 };

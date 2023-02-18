@@ -31,6 +31,7 @@ public:
 	FORCEINLINE int32 GetMoney() const { return Money; }
 	FORCEINLINE int32 GetChips() const { return Chips; }
 	FORCEINLINE float GetDodgeCost() const { return DodgeCost; }
+	FORCEINLINE float GetMinCost() const { return DodgeCost; }
 	FORCEINLINE float GetAttackCost() const { return AttackCost; }
 	FORCEINLINE float GetStamina() const { return Stamina; }
 
