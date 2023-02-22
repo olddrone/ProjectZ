@@ -39,8 +39,17 @@ enum class EEnemyState : uint8
 	EES_Chasing						UMETA(DisplayName = "Chasing"),
 	EES_Attacking					UMETA(DisplayName = "Attacking"),
 	EES_Engaged						UMETA(DisplayName = "Engaged")
-	
 };
+
+UENUM(BlueprintType)
+enum class EEnemyGrade : uint8
+{
+	EEG_Normal						UMETA(DisplayName = "Normal"),
+	EEG_Boss						UMETA(DisplayName = "Boss")
+
+
+};
+
 
 namespace WalkSpeed
 {

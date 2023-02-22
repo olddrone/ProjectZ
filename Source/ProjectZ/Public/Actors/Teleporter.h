@@ -44,21 +44,21 @@ private:
 	FString MapName;
 
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
-	UStaticMeshComponent* TeleportMesh;
+	TObjectPtr<UStaticMeshComponent> TeleportMesh;
 
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
-	UStaticMeshComponent* AreaMesh;
+	TObjectPtr<UStaticMeshComponent> AreaMesh;
 
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
-	USphereComponent* WidgetArea;
+	TObjectPtr<USphereComponent> WidgetArea;
 
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
-	UCapsuleComponent* TeleportArea;
+	TObjectPtr<UCapsuleComponent> TeleportArea;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	UNiagaraComponent* TeleportEffect;
+	TObjectPtr<UNiagaraComponent> TeleportEffect;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	UWidgetComponent* InfomationWidget;
+	TObjectPtr<UWidgetComponent> InfomationWidget;
 
 };

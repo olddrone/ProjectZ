@@ -15,6 +15,8 @@ class UPawnSensingComponent;
 class AWeapon;
 class AChip;
 class UUserWidget;
+class UBehaviorTree;
+
 
 UCLASS()
 class PROJECTZ_API AEnemy : public ABaseCharacter
@@ -31,6 +33,11 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowHitDamage(int32 Damage, FVector HitLocation);
+
+	
+	FORCEINLINE	EEnemyState GetEnemyState() const { return EnemyState; }
+
+
 
 protected:
 	virtual void BeginPlay() override;
@@ -97,13 +104,13 @@ private:
 	double AcceptanceRadius;
 
 	UPROPERTY()
-	AAIController* EnemyController;
+	TObjectPtr<AAIController> EnemyController;
 	
 	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
-	AActor* PatrolTarget;
+	TObjectPtr<AActor> PatrolTarget;
 
 	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
-	TArray<AActor*> PatrolTargets;
+	TArray<TObjectPtr<AActor>> PatrolTargets;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	double PatrolRadius;
@@ -116,7 +123,7 @@ private:
 	float PatrolWaitMax;
 
 	UPROPERTY(VisibleAnywhere)
-	UPawnSensingComponent* PawnSensing;
+	TObjectPtr<UPawnSensingComponent> PawnSensing;
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	EEnemyState EnemyState;
@@ -146,4 +153,8 @@ private:
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	float HitDamageDestroyTime;
+
+	UPROPERTY(VisibleAnywhere, Category = "Combat")	 
+	EEnemyGrade EnemyGrade;
+
 };

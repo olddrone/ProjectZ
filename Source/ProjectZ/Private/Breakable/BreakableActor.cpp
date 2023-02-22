@@ -51,5 +51,7 @@ void ABreakableActor::GetHit_Implementation(const FVector& ImpactPoint, AActor* 
 		Location.Z += 50.f;
 		const int32 Selection = FMath::RandRange(0, MoneyClasses.Num() - 1);
 		World->SpawnActor<AMoney>(MoneyClasses[Selection], Location, GetActorRotation());
+
+		
 	}
 }

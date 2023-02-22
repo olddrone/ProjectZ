@@ -27,6 +27,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	FORCEINLINE UStaticMeshComponent* GetItemMesh() const { return ItemMesh; }
+	FORCEINLINE EItemState GetItemState() const { return ItemState; }
 	FORCEINLINE void SetItemState(EItemState State) { ItemState = State; }
 	FORCEINLINE USphereComponent* GetSphere() const { return Sphere; }
 	FORCEINLINE UTexture2D* GetItemIcon() const { return ItemIcon; }
@@ -64,28 +65,28 @@ protected:
 	float TimeConstant = 5.f;
 
 	UPROPERTY(EditAnywhere, Category = "Effect")
-	UNiagaraComponent* ItemEffect;
+	TObjectPtr<UNiagaraComponent> ItemEffect;
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	float RunningTime;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	UStaticMeshComponent* ItemMesh;
+	TObjectPtr<UStaticMeshComponent> ItemMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	USphereComponent* Sphere;
+	TObjectPtr<USphereComponent> Sphere;
 
 	EItemState ItemState = EItemState::EIS_Hovering;
 	
 	UPROPERTY(EditAnywhere, Category = "Effect")
-	UNiagaraSystem* PickupEffect;
+	TObjectPtr<UNiagaraSystem> PickupEffect;
 	
 	UPROPERTY(EditAnywhere, Category = "Effect")
-	USoundBase* PickupSound;
+	TObjectPtr<USoundBase> PickupSound;
 
 	UPROPERTY(EditAnywhere, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
-	UTexture2D* ItemIcon;
+	TObjectPtr<UTexture2D> ItemIcon;
 };
 
 template<typename T>

@@ -24,7 +24,7 @@ public:
 
 private:
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	APlayerCharacter* Character;
+	TObjectPtr<APlayerCharacter> Character;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	UCharacterMovementComponent* CharacterMovement;

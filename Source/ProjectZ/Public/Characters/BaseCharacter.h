@@ -51,12 +51,6 @@ protected:
 	virtual void PlayDodgeMontage();
 
 	UFUNCTION(BlueprintCallable)
-	FVector GetTranslationWarpTarget();
-	
-	UFUNCTION(BlueprintCallable)
-	FVector GetRotationWarpTarget();
-
-	UFUNCTION(BlueprintCallable)
 	virtual void AttackEnd() { }
 	
 	UFUNCTION(BlueprintCallable)
@@ -82,19 +76,20 @@ protected:
 	void SetToHitVector(const FVector& ImpactPoint);
 
 	void PlayMontageSection(const FName& SectionName);
+
 private:
 	void PlayMontageSection(UAnimMontage* Montage, const FName& SectionName);
 	int32 PlayRandomMontageSection(UAnimMontage* Montage, const TArray<FName>& SectionName);
 
 protected:
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
-	AWeapon* EquippedWeapon;
+	TObjectPtr<AWeapon> EquippedWeapon;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	UAttributeComponent* Attributes;
+	TObjectPtr<UAttributeComponent> Attributes;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	AActor* CombatTarget;
+	TObjectPtr<AActor> CombatTarget;
 
 	UPROPERTY(BlueprintReadOnly)
 	TEnumAsByte<EDeathPose> DeathPose;
@@ -102,31 +97,28 @@ protected:
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Combat")
-	USoundBase* HitSound;
+	TObjectPtr<USoundBase> HitSound;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
-	UParticleSystem* HitParticles;
+	TObjectPtr<UParticleSystem> HitParticles;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	UAnimMontage* AttackMontage;
+	TObjectPtr<UAnimMontage> AttackMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	UAnimMontage* HitMontage;
+	TObjectPtr<UAnimMontage> HitMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	UAnimMontage* DeathMontage;
+	TObjectPtr<UAnimMontage> DeathMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
-	UAnimMontage* DodgeMontage;
+	TObjectPtr<UAnimMontage> DodgeMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TArray<FName> AttackMontageSections;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TArray<FName> DeathMontageSections;
-
-	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
-	double WarpTargetDistance;
 
 	FVector ToHit;
 

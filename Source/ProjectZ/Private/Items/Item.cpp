@@ -18,6 +18,7 @@ AItem::AItem()
 	SetRootComponent(ItemMesh);
 	
 	Sphere = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere"));
+	Sphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	Sphere->SetupAttachment(GetRootComponent());
 
 	ItemEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("EmbersEffect"));

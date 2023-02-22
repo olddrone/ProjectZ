@@ -28,17 +28,19 @@ public:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	UProgressBar* HealthBar;
+	TObjectPtr<UProgressBar> HealthBar;
 
 	UPROPERTY(meta = (BindWidget))
-	UProgressBar* StaminaBar;
+	TObjectPtr<UProgressBar> StaminaBar;
 
 	UPROPERTY(meta = (BindWidget))
-	UImage* MainWeapon;
+	TObjectPtr<UImage> MainWeapon;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* MoneyText;
+	TObjectPtr<UTextBlock> MoneyText;
 
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* ChipText;
+	TObjectPtr<UTextBlock> ChipText;
+
+
 };

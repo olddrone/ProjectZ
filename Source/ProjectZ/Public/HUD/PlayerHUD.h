@@ -28,11 +28,11 @@ private:
 	TSubclassOf<UPlayerOverlay> PlayerOverlayClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Player")
-	UPlayerOverlay* PlayerOverlay;
+	TObjectPtr<UPlayerOverlay> PlayerOverlay;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Widget")
 	TSubclassOf<UTranferWidget> TransferWidgetClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Widget")
-	UTranferWidget* TransferWidget;
+	TObjectPtr<UTranferWidget> TransferWidget;
 };

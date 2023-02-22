@@ -20,5 +20,5 @@ public:
 	
 private:
 	UPROPERTY(meta = (BindWidget))
-	UProgressBar* HealthBar;
+	TObjectPtr<UProgressBar> HealthBar;
 };

@@ -20,6 +20,7 @@ class UTranferWidget;
 class ATeleporter;
 class APlayerController;
 class UNiagaraComponent;
+class UTargetComponent;
 
 UCLASS()
 class PROJECTZ_API APlayerCharacter : public ABaseCharacter, public IPickupInterface
@@ -66,6 +67,8 @@ public:
 	
 	void StopMovement();
 	
+	void DropWeapon(AWeapon* Weapon);
+
 protected:
 	virtual void BeginPlay() override;
 	
@@ -156,54 +159,57 @@ private:
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Camera", meta = (AllowPrivateAccess = "true"))
-	USpringArmComponent*	SpringArm;
-
+	TObjectPtr<USpringArmComponent>	SpringArm;
+	
 	UPROPERTY(VisibleAnywhere, Category = "Camera", meta = (AllowPrivateAccess = "true"))
-	UCameraComponent*		Camera;
+	TObjectPtr<UCameraComponent> Camera;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon", meta = (AllowPrivateAccess = "true"))
-	AItem*					OverlappingItem;
+	TObjectPtr<AItem> OverlappingItem;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Montage", meta = (AllowPrivateAccess = "true"))
-	UAnimMontage*			EquipMontage;
+	TObjectPtr<UAnimMontage> EquipMontage;
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	ECharacterState			CharacterState;
+	ECharacterState CharacterState;
 	
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
-	EActionState			ActionState;
+	EActionState ActionState;
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	UPlayerOverlay*			PlayerOverlay;
-
+	TObjectPtr<UPlayerOverlay> PlayerOverlay;
+	
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	UTranferWidget*			TransferWidget;
-
+	TObjectPtr<UTranferWidget> TransferWidget;
+	
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
-	ATeleporter*			OverlappingTeleporter;
-
+	TObjectPtr<ATeleporter> OverlappingTeleporter;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning")
-	TSubclassOf<AActor>		ActorToSpawn;
+	TSubclassOf<AActor> ActorToSpawn;
 
 	UPROPERTY(VisibleAnywhere)
-	APlayerController*		PlayerController;
-
+	TObjectPtr<APlayerController> PlayerController;
+	
 	bool					bSprint;
 	bool					bTrail;
 	int32					ComboAttackNum;
 	bool					bSaveAttack;
 	bool					bComboAtteck;
 	bool					bMove;
+	
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	UNiagaraComponent*		DeathEffect;
+	TObjectPtr<UNiagaraComponent> DeathEffect;
+
 	UPROPERTY(VisibleAnywhere)
-	UTimelineComponent* DissolveTimeline;
+	TObjectPtr<UTimelineComponent> DissolveTimeline;
+
 	FOnTimelineFloat DissolveTrack;
 
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	UCurveFloat* DissolveCurve;
-	
+	TObjectPtr<UCurveFloat> DissolveCurve;
+
 	UFUNCTION()
 	void UpdateDissolveMaterial(float DissolveValue);
 
@@ -215,4 +221,7 @@ private:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	TArray<UMaterialInstance*> DissolveMaterialInstances;
 
+	UPROPERTY(EditAnywhere, Category ="Target", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UTargetComponent> TargetComponent;
+	
 };

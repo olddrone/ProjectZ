@@ -13,11 +13,10 @@
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 
-
 AEnemy::AEnemy() : CombatRadius(1000.f), AttackRadius(200.f), AcceptanceRadius(50.f),
 PatrolRadius(200.f), PatrolWaitMin(2.f), PatrolWaitMax(5.f), PatrollingSpeed(200.f), 
 ChasingSpeed(300.f), AttackMin(0.5f), AttackMax(1.f), HitDamageDestroyTime(1.f),
-EnemyState(EEnemyState::EES_Patrolling)
+EnemyState(EEnemyState::EES_Patrolling), EnemyGrade(EEnemyGrade::EEG_Normal)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -170,7 +169,6 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
 	HandleDamage(DamageAmount);
 	CombatTarget = EventInstigator->GetPawn();
 	
-	UE_LOG(LogTemp, Warning, TEXT("Hit Enemy[%f]"),DamageAmount);
 	ShowHitDamage(DamageAmount, GetActorLocation()+FVector(0.f,0.f,100.f));
 
 	if (IsInsideAttackRadius())
@@ -197,8 +195,10 @@ bool AEnemy::InTargetRange(AActor* Target, double Radius)
 void AEnemy::MoveToTarget(AActor* Target)
 {
 	if (EnemyController == nullptr || Target == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("1"));
 		return;
-
+	}
 	FAIMoveRequest MoveRequest;
 	MoveRequest.SetGoalActor(Target);
 	MoveRequest.SetAcceptanceRadius(AcceptanceRadius);
@@ -332,7 +332,12 @@ void AEnemy::Attack()
 	Super::Attack();
 	if (CombatTarget == nullptr)
 		return;
-
+	// Add
+	FVector Direction = CombatTarget->GetActorLocation() - GetActorLocation();
+	Direction.Z = 0;
+	FRotator Rotation = FRotationMatrix::MakeFromX(Direction).Rotator();
+	SetActorRotation(Rotation);
+	//
 	EnemyState = EEnemyState::EES_Engaged;
 	PlayAttackMontage();
 }

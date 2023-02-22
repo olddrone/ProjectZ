@@ -27,5 +27,5 @@ public:
 
 private:
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* MapName;
+	TObjectPtr<UTextBlock> MapName;
 };

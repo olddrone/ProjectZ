@@ -22,12 +22,13 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	void Init(USkeletalMeshComponent* Pawn);
-
+	
 private:
 	UPROPERTY(EditAnywhere, Category = "Comp", meta = (AllowPrivateAccess = "true"))
-	UPoseableMeshComponent* PoseableMesh;
+	TObjectPtr<UPoseableMeshComponent> PoseableMesh;
+
 	UPROPERTY(EditAnywhere, Category = "Comp", meta = (AllowPrivateAccess = "true"))
-	UMaterialInstance* Material;
+	TObjectPtr<UMaterialInstance> Material;
 
 	UPROPERTY(VisibleAnywhere, Category = "Comp", meta = (AllowPrivateAccess = "true"))
 	TArray<UMaterialInstanceDynamic*> Materials;

@@ -8,7 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/CapsuleComponent.h"
 
-ABaseCharacter::ABaseCharacter() : WarpTargetDistance(75.f)
+ABaseCharacter::ABaseCharacter() 
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -214,8 +214,6 @@ void ABaseCharacter::SetToHitVector(const FVector& ImpactPoint)
 	ToHit = (ImpactLowerd - GetActorLocation()).GetSafeNormal();
 }
 
-
-
 int32 ABaseCharacter::PlayDeathMontage()
 {
 	const int32 Selection = PlayRandomMontageSection(DeathMontage, DeathMontageSections);
@@ -240,28 +238,6 @@ void ABaseCharacter::StopAttackMontage()
 void ABaseCharacter::PlayDodgeMontage()
 {
 	PlayMontageSection(DodgeMontage, FName("Default"));
-}
-
-FVector ABaseCharacter::GetTranslationWarpTarget()
-{
-	if (CombatTarget == nullptr)
-		return FVector();
-
-	const FVector CombatTargetLocation = CombatTarget->GetActorLocation();
-	const FVector Location = GetActorLocation();
-
-	FVector TargetToMe = (Location - CombatTargetLocation).GetSafeNormal();
-	TargetToMe *= WarpTargetDistance;
-	return CombatTargetLocation + TargetToMe;
-}
-
-FVector ABaseCharacter::GetRotationWarpTarget()
-{
-	if (CombatTarget)
-	{
-		return CombatTarget->GetActorLocation();
-	}
-	return FVector();
 }
 
 void ABaseCharacter::DisableCapsule()

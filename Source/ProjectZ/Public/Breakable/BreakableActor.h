@@ -28,13 +28,13 @@ protected:
 
 private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	UGeometryCollectionComponent* GetmetryCollection;
+	TObjectPtr<UGeometryCollectionComponent> GetmetryCollection;
 
 	UPROPERTY(EditAnywhere, Category = "Breakable Properties", meta = (AllowPrivateAccess = "true"))
 	TArray<TSubclassOf<AMoney>> MoneyClasses;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	UBoxComponent* Box;
+	TObjectPtr<UBoxComponent> Box;
 
 	bool bBroken;
 };

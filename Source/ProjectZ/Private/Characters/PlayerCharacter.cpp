@@ -19,14 +19,15 @@
 #include "ProjectZ/ProjectZ.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Engine/SkeletalMeshSocket.h"
-
 #include "Kismet/KismetMathLibrary.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
-#include "ProjectZ/DebugMacros.h"
 #include "GameFramework/PlayerController.h"
 #include "Actors/Teleporter.h"
 #include "NiagaraComponent.h"
 #include "Components/TimelineComponent.h"
+#include "ProjectZ/DebugMacros.h"
+#include "Components/TargetComponent.h"
 
 APlayerCharacter::APlayerCharacter() : bSprint(false), 
 	CharacterState(ECharacterState::ECS_Unequipped),
@@ -53,12 +54,27 @@ APlayerCharacter::APlayerCharacter() : bSprint(false),
 	DeathEffect->SetupAttachment(GetRootComponent());
 
 	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimeline"));
-
+	
+	TargetComponent = CreateDefaultSubobject<UTargetComponent>(TEXT("TargetComponent"));
+	TargetComponent->MinimumDistanceToEnable = 3000.f;
+	TargetComponent->TargetableCollisionChannel = ECollisionChannel::ECC_Visibility;
+	TargetComponent->bShouldControlRotation = true;
 }
 
 void APlayerCharacter::StopMovement()
 {
 	GetCharacterMovement()->Velocity = FVector::ZeroVector;
+}
+
+void APlayerCharacter::DropWeapon(AWeapon* Weapon)
+{
+	if (Weapon)
+	{
+		FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
+		Weapon->GetItemMesh()->DetachFromComponent(DetachmentTransformRules);
+		Weapon->SetItemState(EItemState::EIS_Hovering);
+		Weapon->UnEquip();
+	}
 }
 
 void APlayerCharacter::BeginPlay()
@@ -75,7 +91,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	GetSurfaceType();
-	
+
 
 	if (Attributes && PlayerOverlay)
 	{
@@ -87,15 +103,15 @@ void APlayerCharacter::Tick(float DeltaTime)
 				Sprint();
 				if (bTrail)
 					SprintTrail();
-				
+
 			}
 			else
 				SprintEnd();
-			
-		}	
+
+		}
 		else
 			Attributes->RegenStamina(DeltaTime);
-		
+
 		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
 	}
 
@@ -139,11 +155,13 @@ void APlayerCharacter::MoveRight(float Value)
 void APlayerCharacter::Turn(float Value)
 {
 	AddControllerYawInput(Value);
+	TargetComponent->TargetActorWithAxisInput(Value);
 }
 
 void APlayerCharacter::LookUp(float Value)
 {
 	AddControllerPitchInput(Value);
+	TargetComponent->TargetActorWithAxisInput(Value);
 }
 
 void APlayerCharacter::EKeyPressed()
@@ -153,7 +171,9 @@ void APlayerCharacter::EKeyPressed()
 	{
 		if (EquippedWeapon)
 		{
-			EquippedWeapon->Destroy();
+			DropWeapon(EquippedWeapon);
+			//EquippedWeapon->Destroy();
+			
 		}
 		EquipWeapon(OverlappingWeapon);
 	}
@@ -409,7 +429,10 @@ EPhysicalSurface APlayerCharacter::GetSurfaceType()
 	const FTransform SocketTransform = RootSocket->GetSocketTransform(GetMesh());
 	const FVector Start = SocketTransform.GetLocation();
 	const FVector End = Start + FVector(0.f, 0.f, -400.f);
+
 	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+	QueryParams.bTraceComplex = true;
 	QueryParams.bReturnPhysicalMaterial = true;
 
 	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, 
@@ -423,7 +446,7 @@ void APlayerCharacter::SetCameraComponent()
 {
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	SpringArm->SetupAttachment(GetRootComponent());
-	SpringArm->TargetArmLength = 300.f;
+	SpringArm->TargetArmLength = 250.f;
 	SpringArm->bUsePawnControlRotation = true;
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
@@ -560,13 +583,22 @@ bool APlayerCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult)
 
 	if (bScreenToWorld)
 	{
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(this);
+		QueryParams.bTraceComplex = true;
+
 		const FVector Start = FVector(CrosshairWorldPosition);
 		const FVector End = FVector(Start + CrosshairWorldDirection* 50'000.f);
+		
+		
 		GetWorld()->LineTraceSingleByChannel(OutHitResult, Start, End, 
-			ECollisionChannel::ECC_Visibility);
-
+			ECollisionChannel::ECC_Visibility, QueryParams);
+		
 		if (OutHitResult.bBlockingHit)
+		{
 			return true;
+		}
+			
 	}
 
 	return false;
@@ -670,9 +702,8 @@ void APlayerCharacter::Inventory()
 
 void APlayerCharacter::LockOn()
 {
-	PRINT_TEXT("Pressed Middle Mouse Key");
+	TargetComponent->TargetActor();
 }
-
 
 void APlayerCharacter::InitWeaponHud(UTexture2D* Image)
 {

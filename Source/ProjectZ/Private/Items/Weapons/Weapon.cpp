@@ -7,9 +7,15 @@
 #include "Components/BoxComponent.h"
 #include "Interfaces/HitInterface.h"
 #include "NiagaraComponent.h"
+#include "Components/WidgetComponent.h"
+
+#include "ProjectZ/DebugMacros.h"
 
 AWeapon::AWeapon() : Damage(20.f), BoxTraceExtent(FVector(5.f)), bShowBoxDebug(false)
 {
+	PrimaryActorTick.bCanEverTick = true;
+
+
 	WeaponBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Weapon Box"));
 	WeaponBox->SetupAttachment(GetRootComponent());
 	WeaponBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -20,15 +26,30 @@ AWeapon::AWeapon() : Damage(20.f), BoxTraceExtent(FVector(5.f)), bShowBoxDebug(f
 	TraceStart->SetupAttachment(GetRootComponent());
 	TraceEnd = CreateDefaultSubobject<USceneComponent>(TEXT("Trace End"));
 	TraceEnd->SetupAttachment(GetRootComponent());
+
+	InterActionWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("InterActionWidget"));
+	InterActionWidget->SetupAttachment(GetRootComponent());
+	InterActionWidget->SetWidgetSpace(EWidgetSpace::Screen);
+	InterActionWidget->SetDrawSize(FVector2D(500, 50));
+
+}
+
+void AWeapon::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+
 }
 
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	GetSphere()->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlap);
+	GetSphere()->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereEndOverlap);
 	WeaponBox->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnBoxOverlap);
 	
-
+	InterActionWidget->SetVisibility(false);
 }
 
 void AWeapon::Equip(USceneComponent* InParent, FName InSocketName, AActor* NewOwner, APawn* NewInstigator)
@@ -38,9 +59,24 @@ void AWeapon::Equip(USceneComponent* InParent, FName InSocketName, AActor* NewOw
 	SetOwner(NewOwner);
 	SetInstigator(NewInstigator);
 	AttachMeshToSocket(InParent, InSocketName);
-	DisableSphereCollision();
+	GetSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
 	PlayEquipSound();
-	DeactivateEmbers();
+	ItemEffect->Deactivate();
+
+	InterActionWidget->SetVisibility(false);
+}
+
+void AWeapon::UnEquip()
+{
+	SetOwner(nullptr);
+	SetInstigator(nullptr);
+	GetSphere()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+
+	SetActorRotation(FRotator(0.f, 0.f, 0.f));
+	FVector Location = GetActorLocation();
+	Location.Z = 150.f;
+	SetActorLocation(Location);
 }
 
 void AWeapon::PlayEquipSound()
@@ -48,22 +84,6 @@ void AWeapon::PlayEquipSound()
 	if (EquipSound)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, EquipSound, GetActorLocation());
-	}
-}
-
-void AWeapon::DisableSphereCollision()
-{
-	if (GetSphere())
-	{
-		GetSphere()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
-}
-
-void AWeapon::DeactivateEmbers()
-{
-	if (ItemEffect)
-	{
-		ItemEffect->Deactivate();
 	}
 }
 
@@ -93,8 +113,24 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 			GetInstigator()->GetController(), this, UDamageType::StaticClass());
 		ExecuteGetHit(BoxHit);
 		CreateFields(BoxHit.ImpactPoint);
+
 	}
 }
+
+void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, 
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	Super::OnSphereOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+	InterActionWidget->SetVisibility(true);
+}
+
+void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, 
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	Super::OnSphereEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex);
+	InterActionWidget->SetVisibility(false);
+}
+
 
 bool AWeapon::ActorIsSameType(AActor* OtherActor, FName type)
 {

@@ -8,6 +8,7 @@
 
 class USoundBase;
 class UBoxComponent;
+class UWidgetComponent;
 /**
  * 
  */
@@ -17,14 +18,16 @@ class PROJECTZ_API AWeapon : public AItem
 	GENERATED_BODY()
 public:
 	AWeapon();
+
+	virtual void Tick(float DeltaTime) override;
+
 	void Equip(USceneComponent* InParent, FName InSocketName, AActor* NewOwner, APawn* NewInstigator);
+	void UnEquip();
 	void AttachMeshToSocket(USceneComponent* InParent, const FName& InSocketName);
 
 	FORCEINLINE UBoxComponent* GetWeaponBox() const { return WeaponBox; }
 	
 	void PlayEquipSound();
-	void DisableSphereCollision();
-	void DeactivateEmbers();
 
 	void ExecuteGetHit(FHitResult& BoxHit);
 
@@ -38,6 +41,14 @@ protected:
 	UFUNCTION(BlueprintImplementableEvent)
 	void CreateFields(const FVector& FieldLocation);
 
+	virtual void OnSphereOverlap(UPrimitiveComponent* OverlappedComponent,
+			AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+			bool bFromSweep, const FHitResult& SweepResult) override;
+
+	virtual void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent,
+			AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex) override;
+
+
 private:
 	void BoxTrace(FHitResult& BoxHit);
 	bool ActorIsSameType(AActor* OtherActor, FName type);
@@ -47,16 +58,16 @@ public:
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
-	USoundBase* EquipSound;
+	TObjectPtr<USoundBase> EquipSound;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
-	UBoxComponent* WeaponBox;
+	TObjectPtr<UBoxComponent> WeaponBox;
 
 	UPROPERTY(VisibleAnywhere)
-	USceneComponent* TraceStart;
+	TObjectPtr<USceneComponent> TraceStart;
 
 	UPROPERTY(VisibleAnywhere)
-	USceneComponent* TraceEnd;
+	TObjectPtr<USceneComponent> TraceEnd;
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float Damage;
@@ -66,4 +77,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	bool bShowBoxDebug;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UWidgetComponent> InterActionWidget;
 };
