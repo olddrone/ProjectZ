@@ -7,6 +7,9 @@
 #include "Components/AttributeComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/TargetComponent.h"
+
+#include "NiagaraComponent.h"
 
 ABaseCharacter::ABaseCharacter() 
 {
@@ -16,12 +19,22 @@ ABaseCharacter::ABaseCharacter()
 	
 	GetCapsuleComponent()->SetCollisionResponseToChannel(
 		ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+
+	TargetComponent = CreateDefaultSubobject<UTargetComponent>(TEXT("TargetComponent"));
+	TargetComponent->MinimumDistanceToEnable = 3000.f;
+	TargetComponent->TargetableCollisionChannel = ECollisionChannel::ECC_Visibility;
+	TargetComponent->bShouldControlRotation = true;
+
+	DeathEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("DeathEffect"));
+	DeathEffect->SetupAttachment(GetRootComponent());
+
+	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimeline"));
 }
 
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	DeathEffect->Deactivate();
 }
 
 void ABaseCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
@@ -30,7 +43,6 @@ void ABaseCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* H
 		Hitter->GetActorLocation() : 
 		GetActorRotation().Vector() * -1.f;
 	
-
 	if (IsAlive())
 	{
 		DirectionalHitReact(GetLocation);
@@ -38,6 +50,8 @@ void ABaseCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* H
 	else
 	{
 		Die();
+		ABaseCharacter* Player = Cast<ABaseCharacter>(Hitter);
+		Player->TargetComponent->TargetLockOff();
 	}
 
 
@@ -95,6 +109,17 @@ void ABaseCharacter::Die()
 {
 	Tags.Add(FName("Dead"));
 	PlayDeathMontage();
+		
+	for (int i = 0; i < DynamicDissolveMaterialInstances.Num(); ++i)
+	{
+		DynamicDissolveMaterialInstances[i] = UMaterialInstanceDynamic::Create(DissolveMaterialInstances[i], this);
+		GetMesh()->SetMaterial(i, DynamicDissolveMaterialInstances[i]);
+		DynamicDissolveMaterialInstances[i]->SetScalarParameterValue(TEXT("Dissolve"), 1.f);
+		DynamicDissolveMaterialInstances[i]->SetScalarParameterValue(TEXT("Glow"), 50.f);
+	}
+
+	StartDissolve();
+	DeathEffect->Activate();
 
 }
 
@@ -195,6 +220,25 @@ int32 ABaseCharacter::PlayRandomMontageSection(UAnimMontage* Montage, const TArr
 	return Selection;
 }
 
+void ABaseCharacter::UpdateDissolveMaterial(float DissolveValue)
+{
+	for (int i = 0; i < DynamicDissolveMaterialInstances.Num(); ++i)
+	{
+		if (DynamicDissolveMaterialInstances[i])
+			DynamicDissolveMaterialInstances[i]->SetScalarParameterValue(TEXT("Dissolve"), DissolveValue);
+	}
+}
+
+void ABaseCharacter::StartDissolve()
+{
+	DissolveTrack.BindDynamic(this, &ABaseCharacter::UpdateDissolveMaterial);
+	if (DissolveCurve && DissolveTimeline)
+	{
+		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
+		DissolveTimeline->Play();
+	}
+}
+
 void ABaseCharacter::DoRagdoll()
 {
 	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
@@ -205,13 +249,15 @@ void ABaseCharacter::DoRagdoll()
 void ABaseCharacter::DoRagdollImpulse()
 {
 	GetMesh()->SetPhysicsLinearVelocity(FVector::ZeroVector);
-	GetMesh()->AddImpulseToAllBodiesBelow(ToHit * -5000.0f, NAME_None);
+	GetMesh()->AddImpulseToAllBodiesBelow(GetActorLocation() + ToHit * -5000.0f, NAME_None);
 }
 
 void ABaseCharacter::SetToHitVector(const FVector& ImpactPoint)
 {
 	const FVector ImpactLowerd(ImpactPoint.X, ImpactPoint.Y, GetActorLocation().Z);
 	ToHit = (ImpactLowerd - GetActorLocation()).GetSafeNormal();
+
+
 }
 
 int32 ABaseCharacter::PlayDeathMontage()

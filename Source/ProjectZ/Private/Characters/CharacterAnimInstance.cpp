@@ -29,5 +29,13 @@ void UCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		DeathPose = Character->GetDeathPose();
 		
 		ZVelocity = Character->GetVelocity().Z;
+
+
+		FRotator AimRotation = Character->GetBaseAimRotation();
+		FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(Character->GetVelocity());
+		FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation);
+		DeltaRotation = FMath::RInterpTo(DeltaRotation, DeltaRot, DeltaTime, 5.f);
+		YawOffset = DeltaRotation.Yaw;
+
 	}
 }

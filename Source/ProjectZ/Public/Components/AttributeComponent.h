@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "AttributeComponent.generated.h"
 
+class APlayerCharacter;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROJECTZ_API UAttributeComponent : public UActorComponent
@@ -28,19 +29,20 @@ public:
 	void AddMoney(int32 AmountOfMoney);
 	void AddChips(int32 NumberOfChips);
 	
+
 	FORCEINLINE int32 GetMoney() const { return Money; }
 	FORCEINLINE int32 GetChips() const { return Chips; }
 	FORCEINLINE float GetDodgeCost() const { return DodgeCost; }
 	FORCEINLINE float GetMinCost() const { return DodgeCost; }
 	FORCEINLINE float GetAttackCost() const { return AttackCost; }
 	FORCEINLINE float GetStamina() const { return Stamina; }
-
 	FORCEINLINE float GetHealth() const { return Health; }
 
 protected:
 	virtual void BeginPlay() override;
 
 private:
+
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float Health;
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
@@ -67,4 +69,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float StaminaRegenRate;
+
+	UPROPERTY(VisibleAnywhere, Category = "Actor Attributes")
+	bool bSprint;
 };

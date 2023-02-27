@@ -38,7 +38,6 @@ private:
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float ZVelocity;
 
-
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	ECharacterState CharacterState;
 
@@ -47,5 +46,10 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	TEnumAsByte<EDeathPose> DeathPose;
-	 
+
+
+	FRotator DeltaRotation;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	float YawOffset;
 };

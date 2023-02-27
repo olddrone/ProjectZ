@@ -5,12 +5,17 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Interfaces/HitInterface.h"
+#include "Components/TimelineComponent.h"
 #include "Characters/CharacterTypes.h"
 #include "BaseCharacter.generated.h"
 
 class AWeapon;
 class UAttributeComponent;
+class UDissolveComponent;
 class UAnimMontage;
+class UTargetComponent;
+class UNiagaraComponent;
+
 
 UCLASS()
 class PROJECTZ_API ABaseCharacter : public ACharacter, public IHitInterface
@@ -24,6 +29,7 @@ public:
 		AController* EventInstigator, AActor* DamageCauser) override;
 
 	FORCEINLINE TEnumAsByte<EDeathPose> GetDeathPose() const { return DeathPose; }
+	FORCEINLINE UAttributeComponent* GetAttributes() const { return Attributes; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -88,11 +94,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UAttributeComponent> Attributes;
 
+
 	UPROPERTY(BlueprintReadOnly, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<AActor> CombatTarget;
 
 	UPROPERTY(BlueprintReadOnly)
 	TEnumAsByte<EDeathPose> DeathPose;
+
+	UPROPERTY(EditAnywhere, Category = "Target", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UTargetComponent> TargetComponent;
 
 
 private:
@@ -114,6 +124,7 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TObjectPtr<UAnimMontage> DodgeMontage;
 
+
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TArray<FName> AttackMontageSections;
 
@@ -121,5 +132,27 @@ private:
 	TArray<FName> DeathMontageSections;
 
 	FVector ToHit;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UNiagaraComponent> DeathEffect;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UTimelineComponent> DissolveTimeline;
+
+	FOnTimelineFloat DissolveTrack;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCurveFloat> DissolveCurve;
+
+	UFUNCTION()
+	void UpdateDissolveMaterial(float DissolveValue);
+
+	void StartDissolve();
+
+	UPROPERTY(EditAnywhere)
+	TArray<TObjectPtr<UMaterialInstanceDynamic>> DynamicDissolveMaterialInstances;
+
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	TArray<TObjectPtr<UMaterialInstance>> DissolveMaterialInstances;
 
 };

@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "BaseCharacter.h"
 #include "CharacterTypes.h"
-#include "Components/TimelineComponent.h"
 #include "Interfaces/PickupInterface.h"
 #include "PlayerCharacter.generated.h"
 
@@ -19,8 +18,8 @@ class UPlayerOverlay;
 class UTranferWidget;
 class ATeleporter;
 class APlayerController;
-class UNiagaraComponent;
-class UTargetComponent;
+class UTrailComponent;
+class UCombatComponent;
 
 UCLASS()
 class PROJECTZ_API APlayerCharacter : public ABaseCharacter, public IPickupInterface
@@ -60,14 +59,12 @@ public:
 
 	void SetOverlappingTeleport(ATeleporter* Teleporter);
 
-	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
-	FORCEINLINE void SetActionState(EActionState Actions) { ActionState = Actions; }
-	FORCEINLINE EActionState GetActionState() const { return ActionState; }
+
 	FORCEINLINE UTranferWidget* GetTransferWidget() const { return TransferWidget; }
-	
-	void StopMovement();
-	
-	void DropWeapon(AWeapon* Weapon);
+	FORCEINLINE APlayerController* GetPlayerController() const { return PlayerController; }
+	FORCEINLINE EActionState GetActionState() const { return ActionState; }
+	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
+	FORCEINLINE void SetActionState(EActionState State) { ActionState = State; }
 
 protected:
 	virtual void BeginPlay() override;
@@ -79,29 +76,7 @@ protected:
 
 	void EKeyPressed();
 	
-	void EquipWeapon(AWeapon* Weapon);
-
-	virtual void Attack() override;
-	void UseAttackStamina();
-	virtual void AttackEnd() override;
-	
-	virtual void ComboAble() override;
-	virtual void NextCombo()override;
-	virtual void ComboDisable() override;
-
-	virtual bool CanAttack() override;
-	
-	void Dodge();
-	bool HasEnoughStamina(float Cost);
-	bool IsOccupied();
-	virtual void DodgeEnd() override;
-
 	virtual void Die() override;
-
-	bool CanDisarm();
-	bool CanArm();
-	void Disarm();
-	void Arm();
 
 	void PlayEquipMontage(const FName& SectionName);
 	
@@ -114,13 +89,16 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void HitReactEnd();
 
-	void SprintStart();
-	void SprintEnd();
-
 	virtual int32 PlayAttackMontage() override;
 
 	UFUNCTION(BlueprintCallable)
 	EPhysicalSurface GetSurfaceType();
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UTrailComponent> Trail;
+
+	//UPROPERTY(VisibleAnywhere)
+	//TObjectPtr<UCombatComponent> Combat;
 
 private:
 	void SetCameraComponent();
@@ -130,32 +108,14 @@ private:
 	void InitializePlayerOverlay();
 	void SetHUDHealth();
 	
-	FORCEINLINE bool IsUnoccupied() const 
-	{ 
-		return GetActionState() == EActionState::EAS_Unocuupied ||
-		ActionState == EActionState::EAS_Sprint; 
-	}
-	
-	bool Sprintable();
-	void SetWalkSpeed(float WalkSpeed);
-	void Sprint();
-	void EquipWeapon();
-
 	void Inventory();
-	void LockOn();
+	
 
 	void InitWeaponHud(UTexture2D* Image);
 	void ShowWeaponHud(ESlateVisibility bIsShow);
 
 	void SetPlayerInputMode(bool bInputMode);
 
-	void StartTrail(EActionState Action);
-
-	UFUNCTION()
-	void TrailTimerReset(EActionState Action);
-
-	void MakeTrail();
-	void SprintTrail();
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Camera", meta = (AllowPrivateAccess = "true"))
@@ -171,12 +131,6 @@ private:
 	TObjectPtr<UAnimMontage> EquipMontage;
 
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	ECharacterState CharacterState;
-	
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
-	EActionState ActionState;
-
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UPlayerOverlay> PlayerOverlay;
 	
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
@@ -185,43 +139,67 @@ private:
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<ATeleporter> OverlappingTeleporter;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Spawning")
-	TSubclassOf<AActor> ActorToSpawn;
-
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<APlayerController> PlayerController;
 	
-	bool					bSprint;
-	bool					bTrail;
+
+
+	
+	// Combat============================================================
+
+public:
+
+	void StopMovement();
+	void DropWeapon(AWeapon* Weapon);
+
+	FORCEINLINE bool IsUnoccupied() const
+	{
+		return ActionState == EActionState::EAS_Unocuupied || ActionState == EActionState::EAS_Sprint;
+	}
+
+	void Dodge();
+	bool HasEnoughStamina(float Cost);
+	bool IsOccupied();
+	virtual void DodgeEnd() override;
+
+	void EquipWeapon(AWeapon* Weapon);
+	bool CanDisarm();
+	bool CanArm();
+	void Disarm();
+	void Arm();
+
+	virtual void Attack() override;
+	void UseAttackStamina();
+	virtual void AttackEnd() override;
+
+	virtual void ComboAble() override;
+	virtual void NextCombo()override;
+	virtual void ComboDisable() override;
+
+	virtual bool CanAttack() override;
+
+	
+
+private:
+	
+	void SprintStart();
+	void SprintEnd();
+	bool Sprintable();
+	void SetWalkSpeed(float WalkSpeed);
+	void Sprint();
+	void EquipWeapon();
+	void LockOn();
+
+private:
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	ECharacterState CharacterState;
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
+	EActionState ActionState;
+
 	int32					ComboAttackNum;
 	bool					bSaveAttack;
 	bool					bComboAtteck;
+	bool					bSprint;
 	bool					bMove;
-	
-
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UNiagaraComponent> DeathEffect;
-
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UTimelineComponent> DissolveTimeline;
-
-	FOnTimelineFloat DissolveTrack;
-
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UCurveFloat> DissolveCurve;
-
-	UFUNCTION()
-	void UpdateDissolveMaterial(float DissolveValue);
-
-	void StartDissolve();
-
-	UPROPERTY(EditAnywhere)
-	TArray<UMaterialInstanceDynamic*> DynamicDissolveMaterialInstances;
-
-	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
-	TArray<UMaterialInstance*> DissolveMaterialInstances;
-
-	UPROPERTY(EditAnywhere, Category ="Target", meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UTargetComponent> TargetComponent;
-	
 };

@@ -137,7 +137,7 @@ void AEnemy::Die()
 {
 	Super::Die();
 	EnemyState = EEnemyState::EES_Dead;
-	
+
 	ClearAttackTimer();
 	HideHealthBar();
 	DisableCapsule();
@@ -145,7 +145,9 @@ void AEnemy::Die()
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 	SetWeaponCollisionEnabled(ECollisionEnabled::NoCollision);
 	SpawnChip();
+
 	DoRagdoll();
+
 }
 
 void AEnemy::SpawnChip()
@@ -196,7 +198,6 @@ void AEnemy::MoveToTarget(AActor* Target)
 {
 	if (EnemyController == nullptr || Target == nullptr)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("1"));
 		return;
 	}
 	FAIMoveRequest MoveRequest;

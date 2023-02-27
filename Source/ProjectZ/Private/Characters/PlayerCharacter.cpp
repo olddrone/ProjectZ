@@ -15,7 +15,7 @@
 #include "HUD/TranferWidget.h"
 #include "Items/Chip.h"
 #include "Items/Money.h"
-#include "Actors/PlayerTrail.h"
+#include "Components/TrailComponent.h"
 #include "ProjectZ/ProjectZ.h"
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "Engine/SkeletalMeshSocket.h"
@@ -24,15 +24,14 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
 #include "Actors/Teleporter.h"
-#include "NiagaraComponent.h"
-#include "Components/TimelineComponent.h"
+
 #include "ProjectZ/DebugMacros.h"
 #include "Components/TargetComponent.h"
 
-APlayerCharacter::APlayerCharacter() : bSprint(false), 
+APlayerCharacter::APlayerCharacter() : 
 	CharacterState(ECharacterState::ECS_Unequipped),
 	ActionState(EActionState::EAS_Unocuupied), 
-	bTrail(true), ComboAttackNum(1), bSaveAttack(false),
+	ComboAttackNum(1), bSaveAttack(false), 
 	bComboAtteck (false), bMove(true)
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -48,17 +47,9 @@ APlayerCharacter::APlayerCharacter() : bSprint(false),
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 720.f, 0.f);
 	
 	SetWalkSpeed(WalkSpeed::Walk);
-
-
-	DeathEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("DeathEffect"));
-	DeathEffect->SetupAttachment(GetRootComponent());
-
-	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimeline"));
 	
-	TargetComponent = CreateDefaultSubobject<UTargetComponent>(TEXT("TargetComponent"));
-	TargetComponent->MinimumDistanceToEnable = 3000.f;
-	TargetComponent->TargetableCollisionChannel = ECollisionChannel::ECC_Visibility;
-	TargetComponent->bShouldControlRotation = true;
+	Trail = CreateDefaultSubobject<UTrailComponent>(TEXT("TrailComponent"));
+
 }
 
 void APlayerCharacter::StopMovement()
@@ -83,8 +74,6 @@ void APlayerCharacter::BeginPlay()
 
 	Tags.Add(FName("EngageableTarget"));
 	InitializePlayerOverlay();
-	DeathEffect->Deactivate();
-
 }
 
 void APlayerCharacter::Tick(float DeltaTime)
@@ -99,10 +88,9 @@ void APlayerCharacter::Tick(float DeltaTime)
 		{
 			if (Sprintable())
 			{
-				Attributes->UseTickStamina(DeltaTime);
+				GetAttributes()->UseTickStamina(DeltaTime);
 				Sprint();
-				if (bTrail)
-					SprintTrail();
+				Trail->SprintTrail();
 
 			}
 			else
@@ -172,7 +160,6 @@ void APlayerCharacter::EKeyPressed()
 		if (EquippedWeapon)
 		{
 			DropWeapon(EquippedWeapon);
-			//EquippedWeapon->Destroy();
 			
 		}
 		EquipWeapon(OverlappingWeapon);
@@ -219,7 +206,7 @@ void APlayerCharacter::Attack()
 	{
 		PlayAttackMontage();
 		SetActionState(EActionState::EAS_Attacking);
-		StartTrail(EActionState::EAS_Attacking);
+		Trail->StartTrail(EActionState::EAS_Attacking);
 		UseAttackStamina();
 	}
 	
@@ -252,7 +239,7 @@ void APlayerCharacter::NextCombo()
 	{
 		PlayAttackMontage();
 		SetActionState(EActionState::EAS_Attacking);
-		StartTrail(EActionState::EAS_Attacking);
+		Trail->StartTrail(EActionState::EAS_Attacking);
 		bComboAtteck = false;
 		UseAttackStamina();
 	}
@@ -280,7 +267,7 @@ void APlayerCharacter::Dodge()
 	PlayDodgeMontage();
 	DisableMeshCollision();
 	ActionState = EActionState::EAS_Dodge;
-	StartTrail(EActionState::EAS_Dodge);
+	Trail->StartTrail(EActionState::EAS_Dodge);
 
 	if (Attributes && PlayerOverlay)
 	{
@@ -315,17 +302,6 @@ void APlayerCharacter::Die()
 	Super::Die();
 	SetActionState(EActionState::EAS_Dead);
 	DisableMeshCollision();
-
-	for (int i = 0; i < DynamicDissolveMaterialInstances.Num(); ++i)
-	{
-		DynamicDissolveMaterialInstances[i] = UMaterialInstanceDynamic::Create(DissolveMaterialInstances[i], this);
-		GetMesh()->SetMaterial(i, DynamicDissolveMaterialInstances[i]);
-		DynamicDissolveMaterialInstances[i]->SetScalarParameterValue(TEXT("Dissolve"), 1.f);
-		DynamicDissolveMaterialInstances[i]->SetScalarParameterValue(TEXT("Glow"), 50.f);
-	}
-	
-	StartDissolve();
-	DeathEffect->Activate();
 }
 
 bool APlayerCharacter::CanDisarm()
@@ -403,8 +379,8 @@ void APlayerCharacter::SprintStart()
 void APlayerCharacter::SprintEnd()
 {
 	bSprint = false;
-	SetActionState(EActionState::EAS_Unocuupied);
 
+	SetActionState(EActionState::EAS_Unocuupied);
 	SetWalkSpeed(WalkSpeed::Walk);
 
 }
@@ -525,11 +501,11 @@ float APlayerCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const
 	HandleDamage(DamageAmount);
 
 	if (IsAlive())
-	{
 		Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-	}
+	
 	else
 		Die();
+	
 	SetHUDHealth();
 	return DamageAmount;
 }
@@ -642,6 +618,7 @@ void APlayerCharacter::SetOverlappingTeleport(ATeleporter* Teleporter)
 
 }
 
+
 void APlayerCharacter::DisplayWidget_Implementation()
 {
 	bMove = false;
@@ -729,77 +706,4 @@ void APlayerCharacter::SetPlayerInputMode(bool bInputMode)
 	PlayerController->SetInputMode(*InputMode);
 	PlayerController->bShowMouseCursor = bInputMode;
 	SetActionState(Action);
-}
-
-void APlayerCharacter::StartTrail(EActionState Action)
-{
-	MakeTrail();
-
-	if (ActionState == Action)
-	{
-		static FTimerHandle TrailTimerHandle;
-		FTimerDelegate TimerDel;
-		TimerDel.BindUFunction(this, FName(TEXT("TrailTimerReset")), Action);
-		GetWorldTimerManager().SetTimer(TrailTimerHandle, TimerDel, TimerRate::AutomaticTrailRate, false);
-	}
-}
-
-void APlayerCharacter::MakeTrail()
-{
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.Owner = this;
-	FRotator rotator = GetActorRotation();
-	FVector  SpawnLocation = GetActorLocation();
-	SpawnLocation.Z -= 90;
-	rotator.Yaw -= 90;
-	auto GTrail = Cast<APlayerTrail>(GetWorld()->SpawnActor<AActor>(
-		ActorToSpawn, SpawnLocation, rotator, SpawnParams));
-	if (GTrail)
-	{
-		GTrail->Init(GetMesh());
-	}
-}
-
-void APlayerCharacter::SprintTrail()
-{
-	static FTimerHandle SprintTimerHandle;
-	bTrail = false;
-	GetWorldTimerManager().SetTimer(SprintTimerHandle, [this]()
-		{
-			if (bTrail == false)
-			{
-				GetWorldTimerManager().ClearTimer(SprintTimerHandle);
-				SprintTrail();
-				bTrail = true;
-				MakeTrail();
-			}
-		}, TimerRate::SprintRate, true);
-}
-
-void APlayerCharacter::UpdateDissolveMaterial(float DissolveValue)
-{
-	for (int i = 0; i < DynamicDissolveMaterialInstances.Num(); ++i)
-	{
-		if (DynamicDissolveMaterialInstances[i])
-			DynamicDissolveMaterialInstances[i]->SetScalarParameterValue(TEXT("Dissolve"), DissolveValue);
-	}
-}
-
-void APlayerCharacter::StartDissolve()
-{
-	DissolveTrack.BindDynamic(this, &APlayerCharacter::UpdateDissolveMaterial);
-	if (DissolveCurve && DissolveTimeline)
-	{
-		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
-		DissolveTimeline->Play();
-	}
-	
-}
-
-void APlayerCharacter::TrailTimerReset(EActionState Action)
-{
-	if (ActionState == Action)
-	{
-		StartTrail(Action);
-	}
 }
