@@ -32,7 +32,7 @@ APlayerCharacter::APlayerCharacter() :
 	CharacterState(ECharacterState::ECS_Unequipped),
 	ActionState(EActionState::EAS_Unocuupied), 
 	ComboAttackNum(1), bSaveAttack(false), 
-	bComboAtteck (false), bMove(true)
+	bComboAttack(false)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -46,7 +46,7 @@ APlayerCharacter::APlayerCharacter() :
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->RotationRate = FRotator(0.f, 720.f, 0.f);
 	
-	SetWalkSpeed(WalkSpeed::Walk);
+	Attributes->SetWalkSpeed(WalkSpeed::Walk);
 	
 	Trail = CreateDefaultSubobject<UTrailComponent>(TEXT("TrailComponent"));
 
@@ -68,6 +68,12 @@ void APlayerCharacter::DropWeapon(AWeapon* Weapon)
 	}
 }
 
+bool APlayerCharacter::GetLockOn() const
+{
+	return TargetComponent->IsLocked();
+}
+
+
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -84,7 +90,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 
 	if (Attributes && PlayerOverlay)
 	{
-		if (bSprint)
+		if (Attributes->GetSprint())
 		{
 			if (Sprintable())
 			{
@@ -199,7 +205,7 @@ void APlayerCharacter::Attack()
 	
 	if (bSaveAttack)
 	{
-		bComboAtteck = true;
+		bComboAttack = true;
 	}
 	
 	if (CanAttack())
@@ -235,12 +241,12 @@ void APlayerCharacter::ComboAble()
 
 void APlayerCharacter::NextCombo()
 {
-	if (bComboAtteck)
+	if (bComboAttack)
 	{
 		PlayAttackMontage();
 		SetActionState(EActionState::EAS_Attacking);
 		Trail->StartTrail(EActionState::EAS_Attacking);
-		bComboAtteck = false;
+		bComboAttack = false;
 		UseAttackStamina();
 	}
 }
@@ -261,8 +267,12 @@ void APlayerCharacter::Dodge()
 	if (IsOccupied() || !HasEnoughStamina(Attributes->GetDodgeCost()))
 		return;
 
+
 	if (UKismetMathLibrary::VSizeXY(GetCharacterMovement()->Velocity) > 0.f)
 		SetActorRotation(GetLastMovementInputVector().Rotation().Quaternion());
+
+	if (GetLockOn())
+		bUseControllerRotationYaw = false;
 
 	PlayDodgeMontage();
 	DisableMeshCollision();
@@ -290,7 +300,11 @@ bool APlayerCharacter::IsOccupied()
 void APlayerCharacter::DodgeEnd()
 {
 	Super::DodgeEnd();
-	if (bSprint)
+
+	if (GetLockOn())
+		bUseControllerRotationYaw = true;
+
+	if (Attributes->GetSprint())
 		Sprint();
 	else
 		SetActionState(EActionState::EAS_Unocuupied);
@@ -372,16 +386,17 @@ void APlayerCharacter::HitReactEnd()
 
 void APlayerCharacter::SprintStart()
 {
-	bSprint = true;
-	
+	if (Attributes)
+		Attributes->SetSprint(true);
 }
 
 void APlayerCharacter::SprintEnd()
 {
-	bSprint = false;
+	if (Attributes)
+		Attributes->SetSprint(false);
 
 	SetActionState(EActionState::EAS_Unocuupied);
-	SetWalkSpeed(WalkSpeed::Walk);
+	Attributes->SetWalkSpeed(WalkSpeed::Walk);
 
 }
 
@@ -446,7 +461,7 @@ void APlayerCharacter::SetMeshCollision()
 
 void APlayerCharacter::Move(float Value, EAxis::Type axis)
 {
-	if (!bMove)
+	if (Attributes->GetMove()== false)
 		return;
 	if (IsOccupied())
 		return;
@@ -478,9 +493,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &APlayerCharacter::SprintStart);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &APlayerCharacter::SprintEnd);
 
-
 	PlayerInputComponent->BindAction("Inventory", IE_Pressed, this, &APlayerCharacter::Inventory);
 	PlayerInputComponent->BindAction("LockOn", IE_Pressed, this, &APlayerCharacter::LockOn);
+
 }
 
 void APlayerCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
@@ -618,10 +633,9 @@ void APlayerCharacter::SetOverlappingTeleport(ATeleporter* Teleporter)
 
 }
 
-
 void APlayerCharacter::DisplayWidget_Implementation()
 {
-	bMove = false;
+	Attributes->SetMove(false);
 	SetPlayerInputMode(true);
 	GetCharacterMovement()->Velocity = FVector(0.f);
 	TransferWidget->SetVisibility(ESlateVisibility::Visible);
@@ -629,7 +643,7 @@ void APlayerCharacter::DisplayWidget_Implementation()
 
 void APlayerCharacter::RemoveWidget_Implementation()
 {
-	bMove = true;
+	Attributes->SetMove(true);
 	SetPlayerInputMode(false);
 	
 	TransferWidget->SetVisibility(ESlateVisibility::Hidden);
@@ -649,15 +663,11 @@ bool APlayerCharacter::Sprintable()
 		UKismetMathLibrary::VSizeXY(GetCharacterMovement()->Velocity) > 0.f;
 }
 
-void APlayerCharacter::SetWalkSpeed(float WalkSpeed)
-{
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
-}
 
 void APlayerCharacter::Sprint()
 {
 	SetActionState(EActionState::EAS_Sprint);
-	SetWalkSpeed(WalkSpeed::Run);
+	Attributes->SetWalkSpeed(WalkSpeed::Run);
 }
 
 void APlayerCharacter::EquipWeapon()
@@ -706,4 +716,12 @@ void APlayerCharacter::SetPlayerInputMode(bool bInputMode)
 	PlayerController->SetInputMode(*InputMode);
 	PlayerController->bShowMouseCursor = bInputMode;
 	SetActionState(Action);
+}
+
+float APlayerCharacter::GetYawOffset()
+{
+	FRotator AimRotation = GetBaseAimRotation();
+	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(GetVelocity());
+	return UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation).Yaw;
+
 }

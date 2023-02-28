@@ -27,7 +27,7 @@ private:
 	TObjectPtr<APlayerCharacter> Character;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	UCharacterMovementComponent* CharacterMovement;
+	TObjectPtr<UCharacterMovementComponent> CharacterMovement;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float GroundSpeed;
@@ -47,9 +47,9 @@ private:
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	TEnumAsByte<EDeathPose> DeathPose;
 
-
-	FRotator DeltaRotation;
-
 	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	float YawOffset;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Movement", meta = (AllowPrivateAccess = "true"))
+	bool IsLock;
 };

@@ -24,18 +24,13 @@ void UCharacterAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	{
 		GroundSpeed = UKismetMathLibrary::VSizeXY(CharacterMovement->Velocity);
 		IsFalling = CharacterMovement->IsFalling();
+		IsLock = Character->GetLockOn();
 		CharacterState = Character->GetCharacterState();
 		ActionState = Character->GetActionState();
 		DeathPose = Character->GetDeathPose();
 		
 		ZVelocity = Character->GetVelocity().Z;
-
-
-		FRotator AimRotation = Character->GetBaseAimRotation();
-		FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(Character->GetVelocity());
-		FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation);
-		DeltaRotation = FMath::RInterpTo(DeltaRotation, DeltaRot, DeltaTime, 5.f);
-		YawOffset = DeltaRotation.Yaw;
-
+		YawOffset = Character->GetYawOffset();
+		
 	}
 }

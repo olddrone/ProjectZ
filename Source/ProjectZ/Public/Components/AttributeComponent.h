@@ -29,6 +29,7 @@ public:
 	void AddMoney(int32 AmountOfMoney);
 	void AddChips(int32 NumberOfChips);
 	
+	void SetWalkSpeed(float WalkSpeed);
 
 	FORCEINLINE int32 GetMoney() const { return Money; }
 	FORCEINLINE int32 GetChips() const { return Chips; }
@@ -37,11 +38,17 @@ public:
 	FORCEINLINE float GetAttackCost() const { return AttackCost; }
 	FORCEINLINE float GetStamina() const { return Stamina; }
 	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE bool GetSprint() const { return bSprint; }
+	FORCEINLINE bool GetMove() const { return bMove; }
+	FORCEINLINE void SetSprint(bool Sprint) { bSprint = Sprint; }
+	FORCEINLINE void SetMove(bool Move) { bMove = Move; }
 
 protected:
 	virtual void BeginPlay() override;
 
 private:
+	UPROPERTY()
+	TObjectPtr<APlayerCharacter> PlayerCharacter;
 
 	UPROPERTY(EditAnywhere, Category = "Actor Attributes")
 	float Health;
@@ -72,4 +79,7 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Actor Attributes")
 	bool bSprint;
+
+	UPROPERTY(VisibleAnywhere, Category = "Actor Attributes")
+	bool bMove;
 };

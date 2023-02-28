@@ -1,10 +1,13 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Components/AttributeComponent.h"
+#include "Characters/PlayerCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 UAttributeComponent::UAttributeComponent() : Health(100.f), MaxHealth(100.f),
 Money(0), Chips(0), Stamina(100.f), MaxStamina(100.f), 
-DodgeCost(14.f), StaminaRegenRate(8.f), SprintCost(10.f), AttackCost(8.f)
+DodgeCost(14.f), StaminaRegenRate(8.f), SprintCost(10.f), AttackCost(8.f),
+bSprint(false), bMove(true)
 {
 	PrimaryComponentTick.bCanEverTick = false;
 
@@ -13,6 +16,7 @@ DodgeCost(14.f), StaminaRegenRate(8.f), SprintCost(10.f), AttackCost(8.f)
 void UAttributeComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	PlayerCharacter = Cast<APlayerCharacter>(GetOwner());
 }
 
 void UAttributeComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
@@ -66,4 +70,10 @@ void UAttributeComponent::AddMoney(int32 AmountOfMoney)
 void UAttributeComponent::AddChips(int32 NumberOfChips)
 {
 	Chips += NumberOfChips;
+}
+
+void UAttributeComponent::SetWalkSpeed(float WalkSpeed)
+{
+	if (PlayerCharacter && PlayerCharacter->GetCharacterMovement())
+		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }

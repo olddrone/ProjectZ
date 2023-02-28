@@ -8,6 +8,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/TargetComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 #include "NiagaraComponent.h"
 

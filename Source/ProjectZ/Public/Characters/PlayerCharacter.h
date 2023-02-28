@@ -58,14 +58,17 @@ public:
 	void MoveToCharacter();
 
 	void SetOverlappingTeleport(ATeleporter* Teleporter);
-
+	
 
 	FORCEINLINE UTranferWidget* GetTransferWidget() const { return TransferWidget; }
 	FORCEINLINE APlayerController* GetPlayerController() const { return PlayerController; }
 	FORCEINLINE EActionState GetActionState() const { return ActionState; }
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 	FORCEINLINE void SetActionState(EActionState State) { ActionState = State; }
-
+	
+	bool GetLockOn() const;
+	float GetYawOffset();
+	
 protected:
 	virtual void BeginPlay() override;
 	
@@ -97,8 +100,6 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UTrailComponent> Trail;
 
-	//UPROPERTY(VisibleAnywhere)
-	//TObjectPtr<UCombatComponent> Combat;
 
 private:
 	void SetCameraComponent();
@@ -178,14 +179,10 @@ public:
 
 	virtual bool CanAttack() override;
 
-	
-
 private:
-	
 	void SprintStart();
 	void SprintEnd();
 	bool Sprintable();
-	void SetWalkSpeed(float WalkSpeed);
 	void Sprint();
 	void EquipWeapon();
 	void LockOn();
@@ -199,7 +196,6 @@ private:
 
 	int32					ComboAttackNum;
 	bool					bSaveAttack;
-	bool					bComboAtteck;
-	bool					bSprint;
-	bool					bMove;
+	bool					bComboAttack;
+
 };

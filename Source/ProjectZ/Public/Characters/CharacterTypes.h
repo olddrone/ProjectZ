@@ -50,7 +50,6 @@ enum class EEnemyGrade : uint8
 
 };
 
-
 namespace WalkSpeed
 {
 	const float Walk = 450.f;

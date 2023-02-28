@@ -27,6 +27,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, 
 		AController* EventInstigator, AActor* DamageCauser) override;
+	
 
 	FORCEINLINE TEnumAsByte<EDeathPose> GetDeathPose() const { return DeathPose; }
 	FORCEINLINE UAttributeComponent* GetAttributes() const { return Attributes; }
