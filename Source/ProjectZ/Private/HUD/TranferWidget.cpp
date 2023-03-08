@@ -2,20 +2,19 @@
 
 #include "HUD/TranferWidget.h"
 #include "Components/TextBlock.h"
+#include "Kismet/GameplayStatics.h"
 
 void UTranferWidget::SetMapName(FString Name)
 {
 	if (MapName)
 	{
-		const FText ToText = FText::FromString(Name);
+		Map = FName(*Name);
+		FText ToText = FText::FromString(Name);
 		MapName->SetText(ToText);
 	}
 }
 
 void UTranferWidget::YesButtonPressed()
 {
-}
-
-void UTranferWidget::NoButtonPressed()
-{
+	UGameplayStatics::OpenLevel(GetWorld(), Map);
 }

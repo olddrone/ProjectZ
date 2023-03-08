@@ -11,6 +11,7 @@ class UCapsuleComponent;
 class UNiagaraComponent;
 class UWidgetComponent;
 class UWidgetAnimation;
+class APlayerCharacter;
 
 UCLASS()
 class PROJECTZ_API ATeleporter : public AActor
@@ -23,7 +24,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	FString GetMapName() const { return MapName; }
 
-	void OpenMap();
+	void SetPlayerInputMode(bool bInputMode, APlayerCharacter* Player);
 
 protected:
 	virtual void BeginPlay() override;
@@ -38,7 +39,6 @@ protected:
 			AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 
-	// PROPERTY 지정자 중 BlueprintNativeEvent를 활용하여 코드로 수정
 private:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	FString MapName;
@@ -60,5 +60,5 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UWidgetComponent> InfomationWidget;
-
+	
 };

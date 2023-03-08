@@ -7,11 +7,11 @@
 void APlayerHUD::BeginPlay()
 {
 	Super::BeginPlay();
-
+ 
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		APlayerController* Controller = World->GetFirstPlayerController();
+		Controller = World->GetFirstPlayerController();
 		if (Controller && PlayerOverlayClass)
 		{
 			PlayerOverlay = CreateWidget<UPlayerOverlay>(Controller, PlayerOverlayClass);
@@ -25,6 +25,25 @@ void APlayerHUD::BeginPlay()
 			TransferWidget->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
+}
 
+void APlayerHUD::SetOverlay(float Percent)
+{
+	PlayerOverlay->SetHealthBarPercent(Percent);
+	PlayerOverlay->SetStaminaBarPercent(1.f);
+	PlayerOverlay->SetMoney(0);
+	PlayerOverlay->SetChip(0);
+}
 
+void APlayerHUD::SetMapName(FString Name)
+{
+	TransferWidget->SetMapName(Name);
+}
+
+void APlayerHUD::DisplayWidget_Implementation()
+{
+}
+
+void APlayerHUD::RemoveWidget_Implementation()
+{
 }

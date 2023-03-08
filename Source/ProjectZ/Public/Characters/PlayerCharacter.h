@@ -14,12 +14,9 @@ class AItem;
 class AChip;
 class AMoney;
 class UAnimMontage;
-class UPlayerOverlay;
-class UTranferWidget;
-class ATeleporter;
-class APlayerController;
 class UTrailComponent;
 class UCombatComponent;
+class APlayerHUD;
 
 UCLASS()
 class PROJECTZ_API APlayerCharacter : public ABaseCharacter, public IPickupInterface
@@ -39,32 +36,11 @@ public:
 	virtual void AddMoney(AMoney* Money) override;
 
 	bool TraceUnderCrosshairs(FHitResult& OutHitResult);
-
-	void InitMapName(FString Name);
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	void DisplayOverlay();
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	void DisplayWidget();
-
-	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	void RemoveWidget();
-
-	UFUNCTION(BlueprintCallable)
-	void Teleport();
-
-	UFUNCTION(BlueprintCallable)
-	void MoveToCharacter();
-
-	void SetOverlappingTeleport(ATeleporter* Teleporter);
-	
-
-	FORCEINLINE UTranferWidget* GetTransferWidget() const { return TransferWidget; }
 	FORCEINLINE APlayerController* GetPlayerController() const { return PlayerController; }
 	FORCEINLINE EActionState GetActionState() const { return ActionState; }
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 	FORCEINLINE void SetActionState(EActionState State) { ActionState = State; }
+	void SetMove(bool move);
 	
 	bool GetLockOn() const;
 	float GetYawOffset();
@@ -97,10 +73,6 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	EPhysicalSurface GetSurfaceType();
 
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UTrailComponent> Trail;
-
-
 private:
 	void SetCameraComponent();
 	void SetMeshCollision();
@@ -111,13 +83,10 @@ private:
 	
 	void Inventory();
 	
-
 	void InitWeaponHud(UTexture2D* Image);
 	void ShowWeaponHud(ESlateVisibility bIsShow);
 
-	void SetPlayerInputMode(bool bInputMode);
-
-
+	void LockOn();
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent>	SpringArm;
@@ -131,26 +100,16 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Montage", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAnimMontage> EquipMontage;
 
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UPlayerOverlay> PlayerOverlay;
-	
-	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<UTranferWidget> TransferWidget;
-	
-	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<ATeleporter> OverlappingTeleporter;
-	
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<APlayerController> PlayerController;
 	
+	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<APlayerHUD> PlayerHUD;
 
-
-	
-	// Combat============================================================
+	UPROPERTY(EditDefaultsOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UTrailComponent> Trail;
 
 public:
-
-	void StopMovement();
 	void DropWeapon(AWeapon* Weapon);
 
 	FORCEINLINE bool IsUnoccupied() const
@@ -185,8 +144,7 @@ private:
 	bool Sprintable();
 	void Sprint();
 	void EquipWeapon();
-	void LockOn();
-
+	
 private:
 	UPROPERTY(BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	ECharacterState CharacterState;

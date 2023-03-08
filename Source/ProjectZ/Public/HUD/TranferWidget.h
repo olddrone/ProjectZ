@@ -22,10 +22,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void YesButtonPressed();
 
-	UFUNCTION(BlueprintCallable)
-	void NoButtonPressed();
 
 private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> MapName;
+
+	FName Map;
 };

@@ -51,6 +51,7 @@ void UPlayerOverlay::SetChip(int32 Chip)
 	}
 }
 
+
 void UPlayerOverlay::ShowWeaponImage(ESlateVisibility bIsShow) const
 {
 	if (MainWeapon)

@@ -12,7 +12,6 @@
 #include "Animation/AnimMontage.h"
 #include "HUD/PlayerHUD.h"
 #include "HUD/PlayerOverlay.h"
-#include "HUD/TranferWidget.h"
 #include "Items/Chip.h"
 #include "Items/Money.h"
 #include "Components/TrailComponent.h"
@@ -23,8 +22,6 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerController.h"
-#include "Actors/Teleporter.h"
-
 #include "ProjectZ/DebugMacros.h"
 #include "Components/TargetComponent.h"
 
@@ -52,11 +49,6 @@ APlayerCharacter::APlayerCharacter() :
 
 }
 
-void APlayerCharacter::StopMovement()
-{
-	GetCharacterMovement()->Velocity = FVector::ZeroVector;
-}
-
 void APlayerCharacter::DropWeapon(AWeapon* Weapon)
 {
 	if (Weapon)
@@ -68,17 +60,22 @@ void APlayerCharacter::DropWeapon(AWeapon* Weapon)
 	}
 }
 
+void APlayerCharacter::SetMove(bool move)
+{
+	{Attributes->SetMove(move); }
+}
+
 bool APlayerCharacter::GetLockOn() const
 {
 	return TargetComponent->IsLocked();
 }
 
-
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
 	Tags.Add(FName("EngageableTarget"));
+
+
 	InitializePlayerOverlay();
 }
 
@@ -88,7 +85,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 	GetSurfaceType();
 
 
-	if (Attributes && PlayerOverlay)
+	if (Attributes && PlayerHUD->GetPlayerOverlay())
 	{
 		if (Attributes->GetSprint())
 		{
@@ -101,12 +98,11 @@ void APlayerCharacter::Tick(float DeltaTime)
 			}
 			else
 				SprintEnd();
-
 		}
 		else
 			Attributes->RegenStamina(DeltaTime);
 
-		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
+		PlayerHUD->GetPlayerOverlay()->SetStaminaBarPercent(Attributes->GetStaminaPercent());
 	}
 
 }
@@ -114,26 +110,9 @@ void APlayerCharacter::Tick(float DeltaTime)
 void APlayerCharacter::InitializePlayerOverlay()
 {
 	PlayerController = Cast<APlayerController>(GetController());
-	if (PlayerController)
-	{
-		APlayerHUD* PlayerHUD = Cast<APlayerHUD>(PlayerController->GetHUD());
-		if (PlayerHUD)
-		{
-			PlayerOverlay = PlayerHUD->GetPlayerOverlay();
-			if (PlayerOverlay && Attributes)
-			{
-				PlayerOverlay->SetHealthBarPercent(Attributes->GetHealthPercent());
-				PlayerOverlay->SetStaminaBarPercent(1.f);
-				PlayerOverlay->SetMoney(0);
-				PlayerOverlay->SetChip(0);	
-			}
-			if (EquippedWeapon == nullptr)
-			{
-				PlayerOverlay->ShowWeaponImage(ESlateVisibility::Hidden);
-			}
-			DisplayOverlay();
-		}
-	}
+	PlayerHUD = Cast<APlayerHUD>(PlayerController->GetHUD());
+	PlayerHUD->SetOverlay(Attributes->GetHealthPercent());
+	PlayerHUD->GetPlayerOverlay()->ShowWeaponImage(ESlateVisibility::Hidden);
 }
 
 void APlayerCharacter::MoveForward(float Value)
@@ -164,10 +143,8 @@ void APlayerCharacter::EKeyPressed()
 	if (OverlappingWeapon)
 	{
 		if (EquippedWeapon)
-		{
 			DropWeapon(EquippedWeapon);
 			
-		}
 		EquipWeapon(OverlappingWeapon);
 	}
 	else
@@ -189,7 +166,6 @@ void APlayerCharacter::EquipWeapon(AWeapon* Weapon)
 	ShowWeaponHud(ESlateVisibility::Visible);
 }
 
-// 코드 중복, 수정 필요
 void APlayerCharacter::Attack()
 {
 	const float MinCost = Attributes->GetMinCost();
@@ -204,9 +180,7 @@ void APlayerCharacter::Attack()
 	Super::Attack();
 	
 	if (bSaveAttack)
-	{
 		bComboAttack = true;
-	}
 	
 	if (CanAttack())
 	{
@@ -220,10 +194,10 @@ void APlayerCharacter::Attack()
 
 void APlayerCharacter::UseAttackStamina()
 {
-	if (Attributes && PlayerOverlay)
+	if (Attributes && PlayerHUD->GetPlayerOverlay())
 	{
 		Attributes->UseStamina(Attributes->GetAttackCost());
-		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
+		PlayerHUD->GetPlayerOverlay()->SetStaminaBarPercent(Attributes->GetStaminaPercent());
 	}
 }
 
@@ -267,7 +241,6 @@ void APlayerCharacter::Dodge()
 	if (IsOccupied() || !HasEnoughStamina(Attributes->GetDodgeCost()))
 		return;
 
-
 	if (UKismetMathLibrary::VSizeXY(GetCharacterMovement()->Velocity) > 0.f)
 		SetActorRotation(GetLastMovementInputVector().Rotation().Quaternion());
 
@@ -279,10 +252,10 @@ void APlayerCharacter::Dodge()
 	ActionState = EActionState::EAS_Dodge;
 	Trail->StartTrail(EActionState::EAS_Dodge);
 
-	if (Attributes && PlayerOverlay)
+	if (Attributes && PlayerHUD->GetPlayerOverlay())
 	{
 		Attributes->UseStamina(Attributes->GetDodgeCost());
-		PlayerOverlay->SetStaminaBarPercent(Attributes->GetStaminaPercent());
+		PlayerHUD->GetPlayerOverlay()->SetStaminaBarPercent(Attributes->GetStaminaPercent());
 	}
 }
 
@@ -354,24 +327,19 @@ void APlayerCharacter::PlayEquipMontage(const FName& SectionName)
 	{
 		AnimInstance->Montage_Play(EquipMontage);
 		AnimInstance->Montage_JumpToSection(SectionName, EquipMontage);
-
 	}
 }
 
 void APlayerCharacter::AttachWeaponToBack()
 {
 	if (EquippedWeapon)
-	{
 		EquippedWeapon->AttachMeshToSocket(GetMesh(), FName("SpineSocket"));
-	}
 }
 
 void APlayerCharacter::AttachWeaponToHand()
 {
 	if (EquippedWeapon)
-	{
 		EquippedWeapon->AttachMeshToSocket(GetMesh(), FName("RightHandSocket"));
-	}
 }
 
 void APlayerCharacter::FinishEquipping()
@@ -461,9 +429,7 @@ void APlayerCharacter::SetMeshCollision()
 
 void APlayerCharacter::Move(float Value, EAxis::Type axis)
 {
-	if (Attributes->GetMove()== false)
-		return;
-	if (IsOccupied())
+	if (Attributes->GetMove()== false || IsOccupied())
 		return;
 
 	if (Controller && Value != 0.f)
@@ -471,7 +437,6 @@ void APlayerCharacter::Move(float Value, EAxis::Type axis)
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
 		const FVector Direction(FRotationMatrix(YawRotation).GetUnitAxis(axis));
 		AddMovementInput(Direction, Value);
-
 	}
 }
 
@@ -540,19 +505,19 @@ void APlayerCharacter::SetOverlappingItem(AItem* Item)
 
 void APlayerCharacter::AddChips(AChip* Chip)
 {
-	if (Attributes && PlayerOverlay)
+	if (Attributes && PlayerHUD->GetPlayerOverlay())
 	{
 		Attributes->AddChips(Chip->GetValue());
-		PlayerOverlay->SetChip(Attributes->GetChips());
+		PlayerHUD->GetPlayerOverlay()->SetChip(Attributes->GetChips());
 	}
 }
 
 void APlayerCharacter::AddMoney(AMoney* Money)
 {
-	if (Attributes && PlayerOverlay)
+	if (Attributes && PlayerHUD->GetPlayerOverlay())
 	{
 		Attributes->AddMoney(Money->GetValue());
-		PlayerOverlay->SetMoney(Attributes->GetMoney());
+		PlayerHUD->GetPlayerOverlay()->SetMoney(Attributes->GetMoney());
 	}
 }
 
@@ -560,9 +525,7 @@ bool APlayerCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult)
 {
 	FVector2D ViewportSize;
 	if (GEngine && GEngine->GameViewport)
-	{
 		GEngine->GameViewport->GetViewportSize(ViewportSize);
-	}
 
 	FVector2D CrosshairLocation = FVector2D(ViewportSize.X / 2.f, ViewportSize.Y / 2.f);
 	FVector CrosshairWorldPosition;
@@ -581,80 +544,20 @@ bool APlayerCharacter::TraceUnderCrosshairs(FHitResult& OutHitResult)
 		const FVector Start = FVector(CrosshairWorldPosition);
 		const FVector End = FVector(Start + CrosshairWorldDirection* 50'000.f);
 		
-		
 		GetWorld()->LineTraceSingleByChannel(OutHitResult, Start, End, 
 			ECollisionChannel::ECC_Visibility, QueryParams);
 		
 		if (OutHitResult.bBlockingHit)
-		{
-			return true;
-		}
-			
+			return true;		
 	}
 
 	return false;
 }
 
-void APlayerCharacter::InitMapName(FString Name)
-{
-	if (PlayerController)
-	{
-		APlayerHUD* PlayerHUD = Cast<APlayerHUD>(PlayerController->GetHUD());
-		if (PlayerHUD)
-		{
-			TransferWidget = PlayerHUD->GetTransferWidget();
-			if (PlayerOverlay)
-			{
-				TransferWidget->SetMapName(Name);
-			}
-		}
-	}
-}
-
-void APlayerCharacter::DisplayOverlay_Implementation()
-{
-}
-
-void APlayerCharacter::Teleport()
-{
-	SetPlayerInputMode(false);
-	OverlappingTeleporter->OpenMap();
-
-}
-
-void APlayerCharacter::MoveToCharacter()
-{
-	SetActorLocation(GetActorLocation() + (-GetActorForwardVector() * 200.f));
-}
-
-void APlayerCharacter::SetOverlappingTeleport(ATeleporter* Teleporter)
-{
-	OverlappingTeleporter = Teleporter;
-
-}
-
-void APlayerCharacter::DisplayWidget_Implementation()
-{
-	Attributes->SetMove(false);
-	SetPlayerInputMode(true);
-	GetCharacterMovement()->Velocity = FVector(0.f);
-	TransferWidget->SetVisibility(ESlateVisibility::Visible);
-}
-
-void APlayerCharacter::RemoveWidget_Implementation()
-{
-	Attributes->SetMove(true);
-	SetPlayerInputMode(false);
-	
-	TransferWidget->SetVisibility(ESlateVisibility::Hidden);
-}
-
 void APlayerCharacter::SetHUDHealth()
 {
-	if (PlayerOverlay && Attributes)
-	{
-		PlayerOverlay->SetHealthBarPercent(Attributes->GetHealthPercent());
-	}
+	if (PlayerHUD->GetPlayerOverlay() && Attributes)
+		PlayerHUD->GetPlayerOverlay()->SetHealthBarPercent(Attributes->GetHealthPercent());
 }
 
 bool APlayerCharacter::Sprintable()
@@ -662,7 +565,6 @@ bool APlayerCharacter::Sprintable()
 	return HasEnoughStamina(Attributes->GetDodgeCost()) &&
 		UKismetMathLibrary::VSizeXY(GetCharacterMovement()->Velocity) > 0.f;
 }
-
 
 void APlayerCharacter::Sprint()
 {
@@ -673,13 +575,9 @@ void APlayerCharacter::Sprint()
 void APlayerCharacter::EquipWeapon()
 {
 	if (CanDisarm())
-	{
 		Disarm();
-	}
 	else if (CanArm())
-	{
 		Arm();
-	}
 }
 
 void APlayerCharacter::Inventory()
@@ -694,28 +592,14 @@ void APlayerCharacter::LockOn()
 
 void APlayerCharacter::InitWeaponHud(UTexture2D* Image)
 {
-	if (PlayerOverlay)
-		PlayerOverlay->SetMainWeapon(Image);
+	if (PlayerHUD->GetPlayerOverlay())
+		PlayerHUD->GetPlayerOverlay()->SetMainWeapon(Image);
 }
 
 void APlayerCharacter::ShowWeaponHud(ESlateVisibility bIsShow)
 {
-	if (PlayerOverlay)
-		PlayerOverlay->ShowWeaponImage(bIsShow);
-}
-
-void APlayerCharacter::SetPlayerInputMode(bool bInputMode)
-{
-	FInputModeDataBase* InputMode = (bInputMode) 
-		? static_cast<FInputModeDataBase*>(new FInputModeUIOnly())
-		: static_cast<FInputModeDataBase*>(new FInputModeGameOnly());
-	
-	EActionState Action = (bInputMode)
-		? EActionState::EAS_UI : EActionState::EAS_Unocuupied;
-
-	PlayerController->SetInputMode(*InputMode);
-	PlayerController->bShowMouseCursor = bInputMode;
-	SetActionState(Action);
+	if (PlayerHUD->GetPlayerOverlay())
+		PlayerHUD->GetPlayerOverlay()->ShowWeaponImage(bIsShow);
 }
 
 float APlayerCharacter::GetYawOffset()
@@ -723,5 +607,4 @@ float APlayerCharacter::GetYawOffset()
 	FRotator AimRotation = GetBaseAimRotation();
 	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(GetVelocity());
 	return UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation).Yaw;
-
 }

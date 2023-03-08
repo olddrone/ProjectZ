@@ -23,6 +23,7 @@ public:
 	void SetMainWeapon(UTexture2D* Image);
 	void SetMoney(int32 Gold);
 	void SetChip(int32 Chip);
+	void SetWeaponImage(UTexture2D* Image);
 
 	void ShowWeaponImage(ESlateVisibility bIsShow) const;
 

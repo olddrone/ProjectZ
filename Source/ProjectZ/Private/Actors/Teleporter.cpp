@@ -9,6 +9,8 @@
 #include "Components/WidgetComponent.h"
 #include "Components/SphereComponent.h"
 #include "ProjectZ/DebugMacros.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "HUD/PlayerHUD.h"
 
 ATeleporter::ATeleporter() : MapName(TEXT("Defaults"))
 {
@@ -52,14 +54,17 @@ void ATeleporter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AAc
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	APlayerCharacter* Character = Cast<APlayerCharacter>(OtherActor);
-	if (Character)
+	APlayerHUD* PlayerHUD = Cast<APlayerHUD>(Character->GetPlayerController()->GetHUD());
+	if (Character && PlayerHUD)
 	{
 		Character->SetActorLocation(GetActorLocation());
-		Character->StopMovement(); 
-		Character->InitMapName(MapName);
-		Character->SetOverlappingTeleport(this);
-		Character->DisplayWidget();
-
+		Character->GetCharacterMovement()->Velocity = FVector::ZeroVector;
+		Character->SetMove(false);
+		
+		PlayerHUD->SetMapName(MapName);
+		PlayerHUD->DisplayWidget();
+		SetPlayerInputMode(true, Character);
+		
 	}
 }
 
@@ -67,16 +72,30 @@ void ATeleporter::OnCapsuleEndOverlap(UPrimitiveComponent* OverlappedComponent, 
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	APlayerCharacter* Character = Cast<APlayerCharacter>(OtherActor);
+	APlayerHUD* PlayerHUD = Cast<APlayerHUD>(Character->GetPlayerController()->GetHUD());
 	if (Character)
 	{
+		Character->SetMove(true);
 
-		Character->InitMapName(FString("Defaults"));
-		Character->SetOverlappingTeleport(nullptr);
+		PlayerHUD->RemoveWidget();
+		SetPlayerInputMode(false, Character);
+		
 	}
 }
 
-void ATeleporter::OpenMap()
+void ATeleporter::SetPlayerInputMode(bool bInputMode, APlayerCharacter* Player)
 {
-	UGameplayStatics::OpenLevel(GetWorld(), FName(MapName));
+	FInputModeDataBase* InputMode = (bInputMode)
+		? static_cast<FInputModeDataBase*>(new FInputModeUIOnly())
+		: static_cast<FInputModeDataBase*>(new FInputModeGameOnly());
+
+	EActionState Action = (bInputMode)
+		? EActionState::EAS_UI : EActionState::EAS_Unocuupied;
+
+	APlayerController* PlayerController = Player->GetPlayerController();
+
+	PlayerController->SetInputMode(*InputMode);
+	PlayerController->bShowMouseCursor = bInputMode;
+	Player->SetActionState(Action);
 }
 
