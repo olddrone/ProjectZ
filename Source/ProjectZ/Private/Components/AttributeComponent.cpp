@@ -77,3 +77,4 @@ void UAttributeComponent::SetWalkSpeed(float WalkSpeed)
 	if (PlayerCharacter && PlayerCharacter->GetCharacterMovement())
 		PlayerCharacter->GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
+

@@ -84,6 +84,9 @@ protected:
 
 	void PlayMontageSection(const FName& SectionName);
 
+	void EnemyDodge();
+
+
 private:
 	void PlayMontageSection(UAnimMontage* Montage, const FName& SectionName);
 	int32 PlayRandomMontageSection(UAnimMontage* Montage, const TArray<FName>& SectionName);
@@ -131,6 +134,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	TArray<FName> DeathMontageSections;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TArray<FName> DodgeMontageSections;
 
 	FVector ToHit;
 

@@ -12,11 +12,12 @@
 #include "Components/BoxComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
+#include "Characters/PlayerCharacter.h"
 
 AEnemy::AEnemy() : CombatRadius(1000.f), AttackRadius(200.f), AcceptanceRadius(50.f),
-PatrolRadius(200.f), PatrolWaitMin(2.f), PatrolWaitMax(5.f), PatrollingSpeed(200.f), 
+PatrolRadius(200.f), PatrolWaitMin(2.f), PatrolWaitMax(5.f), PatrollingSpeed(200.f),
 ChasingSpeed(300.f), AttackMin(0.5f), AttackMax(1.f), HitDamageDestroyTime(1.f),
-EnemyState(EEnemyState::EES_Patrolling), EnemyGrade(EEnemyGrade::EEG_Normal)
+EnemyState(EEnemyState::EES_Patrolling), DodgeMax(3.f), bDodge(true), EnemyGrade(EEnemyGrade::EEG_Normal)
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -60,7 +61,6 @@ void AEnemy::SpawnDefaultWeapon()
 		AWeapon* DefaultWeapon = World->SpawnActor<AWeapon>(WeaponClass);
 		DefaultWeapon->Equip(GetMesh(), FName("WeaponSocket"), this, this);
 		EquippedWeapon = DefaultWeapon;
-
 	}
 }
 
@@ -68,17 +68,12 @@ void AEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (IsDead())
+	if (EnemyState == EEnemyState::EES_Dead)
 		return;
 
-	if (EnemyState > EEnemyState::EES_Patrolling)
-	{
-		CheckCombatTarget();
-	}
-	else
-	{
-		CheckPatrolTarget();
-	}
+	(EnemyState == EEnemyState::EES_Patrolling) 
+		? CheckPatrolTarget() : CheckCombatTarget();
+
 	UpdateHitDamages();
 }
 
@@ -88,21 +83,22 @@ void AEnemy::CheckCombatTarget()
 	{
 		ClearAttackTimer();
 		LoseInterest();
-		if (!IsEngaged())
+		if (EnemyState != EEnemyState::EES_Engaged)
 			StartPatrolling();
 	}
 
-	else if (IsOutsideAttackRadius() && !IsChasing())
+	else if (IsOutsideAttackRadius() && EnemyState != EEnemyState::EES_Chasing)
 	{
 		ClearAttackTimer();
-		if (!IsEngaged())
+		if (EnemyState != EEnemyState::EES_Engaged)
 			ChaseTarget();
 	}
+
 	else if (CanAttack())
-	{
 		StartAttackTimer();
 
-	}
+	else if (CanDodge())
+		Dodge();
 }
 
 void AEnemy::CheckPatrolTarget()
@@ -118,7 +114,7 @@ void AEnemy::CheckPatrolTarget()
 void AEnemy::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 {
 	Super::GetHit_Implementation(ImpactPoint, Hitter);
-	if (!IsDead())
+	if (EnemyState != EEnemyState::EES_Dead)
 		ShowHealthBar();
 	ClearPatrolTimer();
 	ClearAttackTimer();
@@ -127,7 +123,7 @@ void AEnemy::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 
 	if (IsInsideAttackRadius())
 	{
-		if (!IsDead())
+		if (EnemyState != EEnemyState::EES_Dead)
 			StartAttackTimer();
 	}
 }
@@ -174,13 +170,10 @@ float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
 	ShowHitDamage(DamageAmount, GetActorLocation()+FVector(0.f,0.f,100.f));
 
 	if (IsInsideAttackRadius())
-	{
 		EnemyState = EEnemyState::EES_Attacking;
-	}
+	
 	else if (IsOutsideAttackRadius())
-	{
 		ChaseTarget();
-	}
 
 
 	return DamageAmount;
@@ -197,9 +190,8 @@ bool AEnemy::InTargetRange(AActor* Target, double Radius)
 void AEnemy::MoveToTarget(AActor* Target)
 {
 	if (EnemyController == nullptr || Target == nullptr)
-	{
 		return;
-	}
+	
 	FAIMoveRequest MoveRequest;
 	MoveRequest.SetGoalActor(Target);
 	MoveRequest.SetAcceptanceRadius(AcceptanceRadius);
@@ -209,7 +201,6 @@ void AEnemy::MoveToTarget(AActor* Target)
 void AEnemy::PatrolTimerFinished()
 {
 	MoveToTarget(PatrolTarget);
-
 }
 
 void AEnemy::InitializeEnemy()
@@ -223,17 +214,13 @@ void AEnemy::InitializeEnemy()
 void AEnemy::HideHealthBar()
 {
 	if (HealthBarWidget)
-	{
 		HealthBarWidget->SetVisibility(false);
-	}
 }
 
 void AEnemy::ShowHealthBar()
 {
 	if (HealthBarWidget)
-	{
 		HealthBarWidget->SetVisibility(true);
-	}
 }
 
 void AEnemy::LoseInterest()
@@ -266,29 +253,9 @@ bool AEnemy::IsOutsideAttackRadius()
 	return !InTargetRange(CombatTarget, AttackRadius);
 }
 
-bool AEnemy::IsChasing()
-{
-	return EnemyState == EEnemyState::EES_Chasing;
-}
-
 bool AEnemy::IsInsideAttackRadius()
 {
 	return InTargetRange(CombatTarget, AttackRadius);
-}
-
-bool AEnemy::IsAttacking()
-{
-	return EnemyState == EEnemyState::EES_Attacking;
-}
-
-bool AEnemy::IsDead()
-{
-	return EnemyState == EEnemyState::EES_Dead;
-}
-
-bool AEnemy::IsEngaged()
-{
-	return EnemyState == EEnemyState::EES_Engaged;
 }
 
 void AEnemy::ClearPatrolTimer()
@@ -314,9 +281,8 @@ AActor* AEnemy::ChoosePatrolTarget()
 	for (AActor* Target : PatrolTargets)
 	{
 		if (Target != PatrolTarget)
-		{
 			ValidTargets.AddUnique(Target);
-		}
+		
 	}
 
 	const int32 NumPatrolTargets = ValidTargets.Num();
@@ -333,20 +299,23 @@ void AEnemy::Attack()
 	Super::Attack();
 	if (CombatTarget == nullptr)
 		return;
-	// Add
+
 	FVector Direction = CombatTarget->GetActorLocation() - GetActorLocation();
 	Direction.Z = 0;
 	FRotator Rotation = FRotationMatrix::MakeFromX(Direction).Rotator();
 	SetActorRotation(Rotation);
-	//
+	
 	EnemyState = EEnemyState::EES_Engaged;
 	PlayAttackMontage();
 }
 
 bool AEnemy::CanAttack()
 {
-	return  IsInsideAttackRadius() && !IsAttacking()
-		&& !IsEngaged() && !IsDead();
+	return  IsInsideAttackRadius() &&
+		(EnemyState == EEnemyState::EES_NoState ||
+		EnemyState == EEnemyState::EES_Patrolling ||
+		EnemyState == EEnemyState::EES_Chasing);
+
 }
 
 void AEnemy::HandleDamage(float DamageAmount)
@@ -354,9 +323,7 @@ void AEnemy::HandleDamage(float DamageAmount)
 	Super::HandleDamage(DamageAmount);
 
 	if (Attributes && HealthBarWidget)
-	{
 		HealthBarWidget->SetHealthPercent(Attributes->GetHealthPercent());
-	}
 }
 
 
@@ -365,7 +332,8 @@ void AEnemy::PawnSeen(APawn* SeenPawn)
 	const bool bShouldChaseTarget =
 		EnemyState != EEnemyState::EES_Dead &&
 		EnemyState != EEnemyState::EES_Chasing &&
-		EnemyState < EEnemyState::EES_Attacking&&
+		EnemyState < EEnemyState::EES_Attacking &&
+		EnemyState != EEnemyState::EES_Dodge &&
 		SeenPawn->ActorHasTag(FName("EngageableTarget"));
 
 	if (bShouldChaseTarget)
@@ -381,6 +349,38 @@ void AEnemy::AttackEnd()
 {
 	EnemyState = EEnemyState::EES_NoState;
 	CheckCombatTarget();
+}
+
+void AEnemy::Dodge()
+{
+	bDodge = false;
+	DisableMeshCollision();
+	EnemyState = EEnemyState::EES_Dodge;
+	EnemyDodge();
+
+
+	GetWorldTimerManager().SetTimer(DodgeCooldown, [this]() 
+		{ bDodge = true; }, DodgeMax, false);
+}
+
+bool AEnemy::CanDodge()
+{
+	APlayerCharacter* Target = Cast<APlayerCharacter>(CombatTarget);
+
+	return EnemyGrade == EEnemyGrade::EEG_Boss &&
+		IsInsideAttackRadius() && 
+		EnemyState != EEnemyState::EES_Dodge &&
+		Target->GetActionState() == EActionState::EAS_Attacking && 
+		EnemyState != EEnemyState::EES_Engaged &&
+		EnemyState != EEnemyState::EES_Dead && bDodge;
+
+}
+
+void AEnemy::DodgeEnd()
+{
+	Super::DodgeEnd();
+
+	EnemyState = EEnemyState::EES_NoState;
 }
 
 void AEnemy::StoreHitDamage(UUserWidget* HitDamage, FVector Location)

@@ -7,6 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/AttributeComponent.h"
+#include "Components/MyCameraShake.h"
 #include "Items/Item.h"
 #include "Items/Weapons/Weapon.h"
 #include "Animation/AnimMontage.h"
@@ -62,7 +63,7 @@ void APlayerCharacter::DropWeapon(AWeapon* Weapon)
 
 void APlayerCharacter::SetMove(bool move)
 {
-	{Attributes->SetMove(move); }
+	Attributes->SetMove(move);
 }
 
 bool APlayerCharacter::GetLockOn() const
@@ -74,7 +75,6 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	Tags.Add(FName("EngageableTarget"));
-
 
 	InitializePlayerOverlay();
 }
@@ -94,7 +94,6 @@ void APlayerCharacter::Tick(float DeltaTime)
 				GetAttributes()->UseTickStamina(DeltaTime);
 				Sprint();
 				Trail->SprintTrail();
-
 			}
 			else
 				SprintEnd();
@@ -158,7 +157,7 @@ void APlayerCharacter::EKeyPressed()
 
 void APlayerCharacter::EquipWeapon(AWeapon* Weapon)
 {
-	Weapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
+	Weapon->Equip(GetMesh(), FName("WeaponSocket"), this, this);
 	CharacterState = ECharacterState::ECS_OneHandedWeapon;
 	OverlappingItem = nullptr;
 	EquippedWeapon = Weapon;
@@ -249,7 +248,7 @@ void APlayerCharacter::Dodge()
 
 	PlayDodgeMontage();
 	DisableMeshCollision();
-	ActionState = EActionState::EAS_Dodge;
+	SetActionState(EActionState::EAS_Dodge);
 	Trail->StartTrail(EActionState::EAS_Dodge);
 
 	if (Attributes && PlayerHUD->GetPlayerOverlay())
@@ -339,7 +338,7 @@ void APlayerCharacter::AttachWeaponToBack()
 void APlayerCharacter::AttachWeaponToHand()
 {
 	if (EquippedWeapon)
-		EquippedWeapon->AttachMeshToSocket(GetMesh(), FName("RightHandSocket"));
+		EquippedWeapon->AttachMeshToSocket(GetMesh(), FName("WeaponSocket"));
 }
 
 void APlayerCharacter::FinishEquipping()
@@ -362,7 +361,7 @@ void APlayerCharacter::SprintEnd()
 {
 	if (Attributes)
 		Attributes->SetSprint(false);
-
+	
 	SetActionState(EActionState::EAS_Unocuupied);
 	Attributes->SetWalkSpeed(WalkSpeed::Walk);
 
@@ -372,9 +371,7 @@ int32 APlayerCharacter::PlayAttackMontage()
 {
 	FString PlaySection = "Attack" + FString::FromInt(ComboAttackNum);
 	
-	(ComboAttackNum < 3)
-		? ++ComboAttackNum
-		: ComboAttackNum = 1;
+	(ComboAttackNum < 3) ? ++ComboAttackNum : ComboAttackNum = 1;
 
 	PlayMontageSection(FName(*PlaySection));
 
@@ -458,13 +455,15 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &APlayerCharacter::SprintStart);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &APlayerCharacter::SprintEnd);
 
-	PlayerInputComponent->BindAction("Inventory", IE_Pressed, this, &APlayerCharacter::Inventory);
 	PlayerInputComponent->BindAction("LockOn", IE_Pressed, this, &APlayerCharacter::LockOn);
 
 }
 
 void APlayerCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* Hitter)
 {
+	if (CameraShake)
+		GetPlayerController()->PlayerCameraManager->StartCameraShake(CameraShake, 1.f);
+
 	Super::GetHit_Implementation(ImpactPoint, Hitter);
 	SetWeaponCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -493,9 +492,7 @@ float APlayerCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const
 void APlayerCharacter::Jump()
 {
 	if (IsUnoccupied())
-	{
 		Super::Jump();
-	}
 }
 
 void APlayerCharacter::SetOverlappingItem(AItem* Item)
@@ -580,10 +577,6 @@ void APlayerCharacter::EquipWeapon()
 		Arm();
 }
 
-void APlayerCharacter::Inventory()
-{
-	PRINT_TEXT("Pressed I Key");
-}
 
 void APlayerCharacter::LockOn()
 {

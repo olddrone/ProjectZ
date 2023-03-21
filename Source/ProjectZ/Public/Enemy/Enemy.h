@@ -15,8 +15,6 @@ class UPawnSensingComponent;
 class AWeapon;
 class AChip;
 class UUserWidget;
-class UBehaviorTree;
-
 
 UCLASS()
 class PROJECTZ_API AEnemy : public ABaseCharacter
@@ -37,8 +35,6 @@ public:
 	
 	FORCEINLINE	EEnemyState GetEnemyState() const { return EnemyState; }
 
-
-
 protected:
 	virtual void BeginPlay() override;
 
@@ -48,6 +44,10 @@ protected:
 	virtual bool CanAttack() override;
 	virtual void HandleDamage(float DamageAmount) override;
 	virtual void AttackEnd() override;
+	
+	void Dodge();
+	bool CanDodge();
+	virtual void DodgeEnd() override;
 
 	UFUNCTION(BlueprintCallable)
 	void StoreHitDamage(UUserWidget* HitDamage, FVector Location);
@@ -67,11 +67,7 @@ private:
 	bool IsOutsideCombatRadius();
 	void ChaseTarget();
 	bool IsOutsideAttackRadius();
-	bool IsChasing();
 	bool IsInsideAttackRadius();
-	bool IsAttacking();
-	bool IsDead();
-	bool IsEngaged();
 	void ClearPatrolTimer();
 
 	void StartAttackTimer();
@@ -139,6 +135,10 @@ private:
 
 	FTimerHandle AttackTimer;
 
+	FTimerHandle DodgeCooldown;
+	float DodgeMax;
+	bool bDodge;
+
 	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = "true"))
 	float AttackMin;
 
@@ -154,7 +154,6 @@ private:
 	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	float HitDamageDestroyTime;
 
-	UPROPERTY(VisibleAnywhere, Category = "Combat")	 
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
 	EEnemyGrade EnemyGrade;
-
 };

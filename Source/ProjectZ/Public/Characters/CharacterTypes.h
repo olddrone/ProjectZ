@@ -38,6 +38,7 @@ enum class EEnemyState : uint8
 	EES_Dead						UMETA(DisplayName = "Dead"),
 	EES_Chasing						UMETA(DisplayName = "Chasing"),
 	EES_Attacking					UMETA(DisplayName = "Attacking"),
+	EES_Dodge						UMETA(DisplayName = "Dodge"),
 	EES_Engaged						UMETA(DisplayName = "Engaged")
 };
 
@@ -46,7 +47,6 @@ enum class EEnemyGrade : uint8
 {
 	EEG_Normal						UMETA(DisplayName = "Normal"),
 	EEG_Boss						UMETA(DisplayName = "Boss")
-
 
 };
 

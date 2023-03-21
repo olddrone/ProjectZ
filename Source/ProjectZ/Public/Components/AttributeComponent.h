@@ -31,13 +31,16 @@ public:
 	
 	void SetWalkSpeed(float WalkSpeed);
 
+
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetStamina() const { return Stamina; }
 	FORCEINLINE int32 GetMoney() const { return Money; }
 	FORCEINLINE int32 GetChips() const { return Chips; }
+
 	FORCEINLINE float GetDodgeCost() const { return DodgeCost; }
 	FORCEINLINE float GetMinCost() const { return DodgeCost; }
 	FORCEINLINE float GetAttackCost() const { return AttackCost; }
-	FORCEINLINE float GetStamina() const { return Stamina; }
-	FORCEINLINE float GetHealth() const { return Health; }
+
 	FORCEINLINE bool GetSprint() const { return bSprint; }
 	FORCEINLINE bool GetMove() const { return bMove; }
 	FORCEINLINE void SetSprint(bool Sprint) { bSprint = Sprint; }

@@ -17,6 +17,7 @@ class UAnimMontage;
 class UTrailComponent;
 class UCombatComponent;
 class APlayerHUD;
+class UMyCameraShake;
 
 UCLASS()
 class PROJECTZ_API APlayerCharacter : public ABaseCharacter, public IPickupInterface
@@ -81,12 +82,11 @@ private:
 	void InitializePlayerOverlay();
 	void SetHUDHealth();
 	
-	void Inventory();
-	
 	void InitWeaponHud(UTexture2D* Image);
 	void ShowWeaponHud(ESlateVisibility bIsShow);
 
 	void LockOn();
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent>	SpringArm;
@@ -108,6 +108,9 @@ private:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UTrailComponent> Trail;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UMyCameraShake> CameraShake;
 
 public:
 	void DropWeapon(AWeapon* Weapon);

@@ -30,7 +30,7 @@ protected:
 
 private:
 	UPROPERTY()
-	APlayerCharacter* PlayerCharacter;
+	TObjectPtr<APlayerCharacter> PlayerCharacter;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Spawning")
 	TSubclassOf<AActor> ActorToSpawn;

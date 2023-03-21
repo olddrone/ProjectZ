@@ -45,16 +45,13 @@ void ABaseCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* H
 		GetActorRotation().Vector() * -1.f;
 	
 	if (IsAlive())
-	{
 		DirectionalHitReact(GetLocation);
-	}
 	else
 	{
 		Die();
 		ABaseCharacter* Player = Cast<ABaseCharacter>(Hitter);
 		Player->TargetComponent->TargetLockOff();
 	}
-
 
 	PlayHitSound(ImpactPoint);
 	SpawnHitParticles(ImpactPoint);
@@ -63,7 +60,6 @@ void ABaseCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* H
 void ABaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent,
@@ -101,9 +97,7 @@ void ABaseCharacter::PlayHitMontage(const FName& SectionName)
 void ABaseCharacter::Attack()
 {
 	if (CombatTarget && CombatTarget->ActorHasTag(FName("Dead")))
-	{
 		CombatTarget = nullptr;
-	}
 }
 
 void ABaseCharacter::Die()
@@ -127,12 +121,10 @@ void ABaseCharacter::Die()
 void ABaseCharacter::DeathEnd()
 {
 	Destroy();
-	if (EquippedWeapon)
-	{
-		EquippedWeapon->Destroy();
-	}
-}
 
+	if (EquippedWeapon)
+		EquippedWeapon->Destroy();
+}
 
 void ABaseCharacter::DirectionalHitReact(const FVector& ImpactPoint)
 {
@@ -144,23 +136,15 @@ void ABaseCharacter::DirectionalHitReact(const FVector& ImpactPoint)
 
 	const FVector CrossProduct = FVector::CrossProduct(Forward, ToHit);
 	if (CrossProduct.Z < 0)
-	{
 		Theta *= -1.f;
-	}
 
 	FName Section("FromBack");
 	if (-45.f <= Theta && Theta < 45.f)
-	{
 		Section = FName("FromFront");
-	}
 	else if (-135.f <= Theta && Theta < -45.f)
-	{
 		Section = FName("FromLeft");
-	}
 	else if (45.f <= Theta && Theta < 135.f)
-	{
 		Section = FName("FromRight");
-	}
 
 	PlayHitMontage(Section);
 }
@@ -168,30 +152,29 @@ void ABaseCharacter::DirectionalHitReact(const FVector& ImpactPoint)
 void ABaseCharacter::PlayHitSound(const FVector& ImpactPoint)
 {
 	if (HitSound)
-	{
 		UGameplayStatics::PlaySoundAtLocation(this, HitSound, ImpactPoint);
-	}
 }
 
 void ABaseCharacter::SpawnHitParticles(const FVector& ImpactPoint)
 {
 	if (HitParticles && GetWorld())
-	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), HitParticles, ImpactPoint);
-	}
 }
 
 void ABaseCharacter::HandleDamage(float DamageAmount)
 {
 	if (Attributes)
-	{
 		Attributes->ReceiveDamage(DamageAmount);
-	}
 }
 
 void ABaseCharacter::PlayMontageSection(const FName& SectionName)
 {
 	PlayMontageSection(AttackMontage, SectionName);
+}
+
+void ABaseCharacter::EnemyDodge()
+{
+	PlayRandomMontageSection(DodgeMontage, DodgeMontageSections);
 }
 
 void ABaseCharacter::PlayMontageSection(UAnimMontage* Montage, const FName& SectionName)
@@ -265,10 +248,9 @@ int32 ABaseCharacter::PlayDeathMontage()
 {
 	const int32 Selection = PlayRandomMontageSection(DeathMontage, DeathMontageSections);
 	TEnumAsByte<EDeathPose> Pose(Selection);
+	
 	if (Pose < EDeathPose::EDP_MAX)
-	{
 		DeathPose = Pose;
-	}
 
 	return Selection;
 }
@@ -276,10 +258,9 @@ int32 ABaseCharacter::PlayDeathMontage()
 void ABaseCharacter::StopAttackMontage()
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	
 	if (AnimInstance)
-	{
 		AnimInstance->Montage_Stop(0.25f, AttackMontage);
-	}
 }
 
 void ABaseCharacter::PlayDodgeMontage()
@@ -290,7 +271,6 @@ void ABaseCharacter::PlayDodgeMontage()
 void ABaseCharacter::DisableCapsule()
 {
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
 }
 
 bool ABaseCharacter::IsAlive()
