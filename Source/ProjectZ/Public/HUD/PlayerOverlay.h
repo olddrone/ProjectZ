@@ -9,6 +9,7 @@
 class UProgressBar;
 class UTextBlock;
 class UImage;
+class UOverlay;
 /**
  * 
  */
@@ -23,8 +24,8 @@ public:
 	void SetMainWeapon(UTexture2D* Image);
 	void SetMoney(int32 Gold);
 	void SetChip(int32 Chip);
-	void SetWeaponImage(UTexture2D* Image);
-
+	
+	void ShowHelp(ESlateVisibility bIsShow) const;
 	void ShowWeaponImage(ESlateVisibility bIsShow) const;
 
 private:
@@ -43,5 +44,6 @@ private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> ChipText;
 
-
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UOverlay> Help;
 };

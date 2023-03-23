@@ -53,34 +53,41 @@ void ATeleporter::BeginPlay()
 void ATeleporter::OnCapsuleOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	APlayerCharacter* Character = Cast<APlayerCharacter>(OtherActor);
-	APlayerHUD* PlayerHUD = Cast<APlayerHUD>(Character->GetPlayerController()->GetHUD());
-	if (Character && PlayerHUD)
+	if (OtherActor->ActorHasTag("Player"))
 	{
-		Character->SetActorLocation(GetActorLocation());
-		Character->GetCharacterMovement()->Velocity = FVector::ZeroVector;
-		Character->SetMove(false);
-		
-		PlayerHUD->SetMapName(MapName);
-		PlayerHUD->DisplayWidget();
-		SetPlayerInputMode(true, Character);
-		
+		APlayerCharacter* Character = Cast<APlayerCharacter>(OtherActor);
+		APlayerHUD* PlayerHUD = Cast<APlayerHUD>(Character->GetPlayerController()->GetHUD());
+
+		if (Character && PlayerHUD)
+		{
+			Character->SetActorLocation(GetActorLocation());
+			Character->GetCharacterMovement()->Velocity = FVector::ZeroVector;
+			Character->SetMove(false);
+
+			PlayerHUD->SetMapName(MapName);
+			PlayerHUD->DisplayWidget();
+			SetPlayerInputMode(true, Character);
+
+		}
 	}
 }
 
 void ATeleporter::OnCapsuleEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	APlayerCharacter* Character = Cast<APlayerCharacter>(OtherActor);
-	APlayerHUD* PlayerHUD = Cast<APlayerHUD>(Character->GetPlayerController()->GetHUD());
-	if (Character)
+	if (OtherActor->ActorHasTag("Player"))
 	{
-		Character->SetMove(true);
+		APlayerCharacter* Character = Cast<APlayerCharacter>(OtherActor);
+		APlayerHUD* PlayerHUD = Cast<APlayerHUD>(Character->GetPlayerController()->GetHUD());
+		if (Character && PlayerHUD)
+		{
+			Character->SetMove(true);
 
-		PlayerHUD->RemoveWidget();
-		SetPlayerInputMode(false, Character);
-		
-	}
+			PlayerHUD->RemoveWidget();
+			SetPlayerInputMode(false, Character);
+
+		}
+	}	
 }
 
 void ATeleporter::SetPlayerInputMode(bool bInputMode, APlayerCharacter* Player)

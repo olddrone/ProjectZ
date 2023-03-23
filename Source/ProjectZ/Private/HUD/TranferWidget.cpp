@@ -16,5 +16,5 @@ void UTranferWidget::SetMapName(FString Name)
 
 void UTranferWidget::YesButtonPressed()
 {
-	UGameplayStatics::OpenLevel(GetWorld(), Map);
+	UGameplayStatics::OpenLevel(GetWorld(), Map, true, FString(TEXT("LoadData=true?SetPosition=false")));
 }

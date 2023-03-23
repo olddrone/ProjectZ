@@ -87,6 +87,12 @@ private:
 
 	void LockOn();
 
+	void Init();
+	
+	void ShowHelp();
+	void HideHelp();
+
+
 private:
 	UPROPERTY(VisibleAnywhere, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<USpringArmComponent>	SpringArm;
@@ -141,6 +147,12 @@ public:
 
 	virtual bool CanAttack() override;
 
+	UFUNCTION(BlueprintCallable)
+	void SaveGame();
+
+	UFUNCTION(BlueprintCallable)
+	void LoadGame(bool SetPosition);
+
 private:
 	void SprintStart();
 	void SprintEnd();
@@ -155,8 +167,10 @@ private:
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
 	EActionState ActionState;
 
-	int32					ComboAttackNum;
-	bool					bSaveAttack;
-	bool					bComboAttack;
-
+	int32 ComboAttackNum;
+	bool bSaveAttack;
+	bool bComboAttack;
+	UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AWeapon> WeaponClass;
+	
 };

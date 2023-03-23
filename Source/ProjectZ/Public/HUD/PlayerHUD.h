@@ -21,6 +21,7 @@ class PROJECTZ_API APlayerHUD : public AHUD
 public:
 	virtual void BeginPlay() override;
 	void SetOverlay(float Percent);
+	void SetOverlay(float HealthPercent, float StaminaPercent, uint32 Money, uint32 Chip);
 
 	void SetMapName(FString Name);
 

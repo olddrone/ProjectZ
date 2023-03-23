@@ -5,6 +5,7 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "Components/Image.h"
+#include "Components/Overlay.h"
 
 void UPlayerOverlay::SetHealthBarPercent(float Percent)
 {
@@ -51,6 +52,14 @@ void UPlayerOverlay::SetChip(int32 Chip)
 	}
 }
 
+
+void UPlayerOverlay::ShowHelp(ESlateVisibility bIsShow) const
+{
+	if (Help)
+	{
+		Help->SetVisibility(bIsShow);
+	}
+}
 
 void UPlayerOverlay::ShowWeaponImage(ESlateVisibility bIsShow) const
 {

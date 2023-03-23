@@ -31,6 +31,10 @@ public:
 	
 	void SetWalkSpeed(float WalkSpeed);
 
+	void SetHealth(float health) { Health = health; }
+	void SetStamina(float stamina) { Stamina = stamina; }
+	void SetMoney(uint32 money) { Money = money; }
+	void SetChips(uint32 chip) { Chips = chip; }
 
 	FORCEINLINE float GetHealth() const { return Health; }
 	FORCEINLINE float GetStamina() const { return Stamina; }

@@ -35,6 +35,14 @@ void APlayerHUD::SetOverlay(float Percent)
 	PlayerOverlay->SetChip(0);
 }
 
+void APlayerHUD::SetOverlay(float HealthPercent, float StaminaPercent, uint32 Money, uint32 Chip)
+{
+	PlayerOverlay->SetHealthBarPercent(HealthPercent);
+	PlayerOverlay->SetStaminaBarPercent(StaminaPercent);
+	PlayerOverlay->SetMoney(Money);
+	PlayerOverlay->SetChip(Chip);
+}
+
 void APlayerHUD::SetMapName(FString Name)
 {
 	TransferWidget->SetMapName(Name);

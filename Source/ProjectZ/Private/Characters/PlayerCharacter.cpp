@@ -25,6 +25,8 @@
 #include "GameFramework/PlayerController.h"
 #include "ProjectZ/DebugMacros.h"
 #include "Components/TargetComponent.h"
+#include "Save/FirstSaveGame.h"
+#include "GameMode/ProjectZGameModeBase.h"
 
 APlayerCharacter::APlayerCharacter() : 
 	CharacterState(ECharacterState::ECS_Unequipped),
@@ -36,6 +38,8 @@ APlayerCharacter::APlayerCharacter() :
 
 	SetCameraComponent();
 	SetMeshCollision();
+
+	
 
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationRoll = false;
@@ -77,6 +81,12 @@ void APlayerCharacter::BeginPlay()
 	Tags.Add(FName("EngageableTarget"));
 
 	InitializePlayerOverlay();
+
+	AProjectZGameModeBase* GameMode = Cast<AProjectZGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
+	
+	if (GameMode->GetOption())
+		LoadGame(GameMode->GetLocation());
+
 }
 
 void APlayerCharacter::Tick(float DeltaTime)
@@ -111,7 +121,50 @@ void APlayerCharacter::InitializePlayerOverlay()
 	PlayerController = Cast<APlayerController>(GetController());
 	PlayerHUD = Cast<APlayerHUD>(PlayerController->GetHUD());
 	PlayerHUD->SetOverlay(Attributes->GetHealthPercent());
+	PlayerHUD->GetPlayerOverlay()->ShowHelp(ESlateVisibility::Hidden);
 	PlayerHUD->GetPlayerOverlay()->ShowWeaponImage(ESlateVisibility::Hidden);
+}
+
+
+void APlayerCharacter::Init()
+{
+	UFirstSaveGame* LoadGameInstance = Cast<UFirstSaveGame>(
+		UGameplayStatics::CreateSaveGameObject(UFirstSaveGame::StaticClass()));
+
+	LoadGameInstance = Cast<UFirstSaveGame>(UGameplayStatics::LoadGameFromSlot(
+		LoadGameInstance->PlayerName, LoadGameInstance->UserIndex));
+
+	Attributes->SetHealth(LoadGameInstance->Stat.Health);
+	Attributes->SetStamina(LoadGameInstance->Stat.Stamina);
+	Attributes->SetMoney(LoadGameInstance->Stat.Money);
+	Attributes->SetChips(LoadGameInstance->Stat.Chip);
+
+	PlayerHUD->SetOverlay(
+		Attributes->GetHealthPercent(),
+		Attributes->GetStaminaPercent(),
+		Attributes->GetMoney(),
+		Attributes->GetChips());
+
+	if (LoadGameInstance->Stat.HasWeapon)
+	{
+		UWorld* World = GetWorld();
+		if (World && WeaponClass)
+			EquipWeapon(World->SpawnActor<AWeapon>(WeaponClass));
+
+	}
+
+}
+
+void APlayerCharacter::ShowHelp()
+{
+	if (PlayerHUD->GetPlayerOverlay())
+		PlayerHUD->GetPlayerOverlay()->ShowHelp(ESlateVisibility::Visible);
+}
+
+void APlayerCharacter::HideHelp()
+{
+	if (PlayerHUD->GetPlayerOverlay())
+		PlayerHUD->GetPlayerOverlay()->ShowHelp(ESlateVisibility::Hidden);
 }
 
 void APlayerCharacter::MoveForward(float Value)
@@ -455,6 +508,9 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	PlayerInputComponent->BindAction("Sprint", IE_Pressed, this, &APlayerCharacter::SprintStart);
 	PlayerInputComponent->BindAction("Sprint", IE_Released, this, &APlayerCharacter::SprintEnd);
 
+	PlayerInputComponent->BindAction("Help", IE_Pressed, this, &APlayerCharacter::ShowHelp);
+	PlayerInputComponent->BindAction("Help", IE_Released, this, &APlayerCharacter::HideHelp);
+
 	PlayerInputComponent->BindAction("LockOn", IE_Pressed, this, &APlayerCharacter::LockOn);
 
 }
@@ -583,6 +639,8 @@ void APlayerCharacter::LockOn()
 	TargetComponent->TargetActor();
 }
 
+
+
 void APlayerCharacter::InitWeaponHud(UTexture2D* Image)
 {
 	if (PlayerHUD->GetPlayerOverlay())
@@ -600,4 +658,67 @@ float APlayerCharacter::GetYawOffset()
 	FRotator AimRotation = GetBaseAimRotation();
 	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(GetVelocity());
 	return UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation).Yaw;
+}
+
+void APlayerCharacter::SaveGame()
+{
+	UFirstSaveGame* SaveGameInstance = Cast<UFirstSaveGame>(UGameplayStatics::CreateSaveGameObject(UFirstSaveGame::StaticClass()));
+
+	if (Attributes)
+	{
+		SaveGameInstance->Stat.Health = Attributes->GetHealth();
+		SaveGameInstance->Stat.Stamina = Attributes->GetStamina();
+		SaveGameInstance->Stat.Money = Attributes->GetMoney();
+		SaveGameInstance->Stat.Chip = Attributes->GetChips();
+
+		SaveGameInstance->Stat.Location = GetActorLocation();
+		SaveGameInstance->Stat.Rotation = GetActorRotation();
+
+		(EquippedWeapon)
+			? SaveGameInstance->Stat.HasWeapon = true
+			: SaveGameInstance->Stat.HasWeapon = false;
+
+		FString mapname = UGameplayStatics::GetCurrentLevelName(GetWorld());
+		SaveGameInstance->MapName = FName(*mapname);
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *mapname);
+		UGameplayStatics::SaveGameToSlot(SaveGameInstance, SaveGameInstance->PlayerName, SaveGameInstance->UserIndex);
+	
+	}
+
+}
+
+void APlayerCharacter::LoadGame(bool SetPosition)
+{
+	UFirstSaveGame* LoadGameInstance = Cast<UFirstSaveGame>(
+		UGameplayStatics::CreateSaveGameObject(UFirstSaveGame::StaticClass()));
+
+	LoadGameInstance = Cast<UFirstSaveGame>(UGameplayStatics::LoadGameFromSlot(
+		LoadGameInstance->PlayerName, LoadGameInstance->UserIndex));
+
+	Attributes->SetHealth(LoadGameInstance->Stat.Health);
+	Attributes->SetStamina(LoadGameInstance->Stat.Stamina);
+	Attributes->SetMoney(LoadGameInstance->Stat.Money);
+	Attributes->SetChips(LoadGameInstance->Stat.Chip);
+
+	PlayerHUD->SetOverlay(
+		Attributes->GetHealthPercent(),
+		Attributes->GetStaminaPercent(),
+		Attributes->GetMoney(),
+		Attributes->GetChips());
+
+	if (LoadGameInstance->Stat.HasWeapon)
+	{
+		UWorld* World = GetWorld();
+		if (World && WeaponClass)
+			EquipWeapon(World->SpawnActor<AWeapon>(WeaponClass));
+
+	}
+
+	if (SetPosition)
+	{
+		SetActorLocation(LoadGameInstance->Stat.Location);
+		SetActorRotation(LoadGameInstance->Stat.Rotation);
+	}
+
+
 }
