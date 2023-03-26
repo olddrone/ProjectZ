@@ -151,7 +151,7 @@ void AEnemy::SpawnChip()
 	UWorld* World = GetWorld();
 	if (World && ChipClass && Attributes)
 	{
-		const FVector SpawnLocation = GetActorLocation() + FVector(0.f, 0.f, 125.f);
+		const FVector SpawnLocation = GetActorLocation() + FVector(0.f, 0.f, 50.f);
 		AChip* SpawnedChip = World->SpawnActor<AChip>(ChipClass, SpawnLocation, GetActorRotation());
 		if (SpawnedChip)
 		{

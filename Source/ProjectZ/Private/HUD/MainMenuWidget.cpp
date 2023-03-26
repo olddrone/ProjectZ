@@ -14,3 +14,4 @@ FName UMainMenuWidget::GetMapname()
 
 	return LoadGameInstance->MapName;
 }
+

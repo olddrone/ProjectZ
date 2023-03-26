@@ -15,7 +15,6 @@ AWeapon::AWeapon() : Damage(20.f), BoxTraceExtent(FVector(5.f)), bShowBoxDebug(f
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-
 	WeaponBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Weapon Box"));
 	WeaponBox->SetupAttachment(GetRootComponent());
 	WeaponBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -37,7 +36,6 @@ AWeapon::AWeapon() : Damage(20.f), BoxTraceExtent(FVector(5.f)), bShowBoxDebug(f
 void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 
 }
 
@@ -106,7 +104,7 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 
 	if (BoxHit.GetActor())
 	{
-		if (ActorIsSameType(BoxHit.GetActor(), "Enemy"))
+	if (ActorIsSameType(BoxHit.GetActor(), "Enemy"))
 			return;
 
 		UGameplayStatics::ApplyDamage(BoxHit.GetActor(), Damage, 
@@ -150,7 +148,6 @@ void AWeapon::BoxTrace(FHitResult& BoxHit)
 	for (AActor* Actor : IgnoreActors)
 	{
 		ActorsToIgnore.AddUnique(Actor);
-
 	}
 
 	UKismetSystemLibrary::BoxTraceSingle(this, Start, End, BoxTraceExtent,

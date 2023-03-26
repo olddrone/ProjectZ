@@ -52,5 +52,7 @@ private:
 
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly, Category = "Widget", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UTranferWidget> TransferWidget;
+
+
 };
 

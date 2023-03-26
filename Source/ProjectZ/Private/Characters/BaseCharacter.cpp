@@ -124,6 +124,7 @@ void ABaseCharacter::DeathEnd()
 
 	if (EquippedWeapon)
 		EquippedWeapon->Destroy();
+
 }
 
 void ABaseCharacter::DirectionalHitReact(const FVector& ImpactPoint)

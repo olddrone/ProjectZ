@@ -20,12 +20,12 @@ public:
 	void SetMapName(FString Name);
 
 	UFUNCTION(BlueprintCallable)
-	void YesButtonPressed();
-
+	FORCEINLINE FName GetMap() const { return Map; }
 
 private:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UTextBlock> MapName;
 
+	UPROPERTY()
 	FName Map;
 };

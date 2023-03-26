@@ -13,9 +13,9 @@ UCLASS()
 class PROJECTZ_API UMainMenuWidget : public UUserWidget
 {
 	GENERATED_BODY()
-	
 
 public:
 	UFUNCTION(BlueprintCallable)
 		FName GetMapname();
+
 };
